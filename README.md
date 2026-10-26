@@ -60,8 +60,9 @@ uv run python scripts/smoke_cross_creator.py data/raw/<a>.mp4 data/raw/<b>.mp4 -
 uv run python -m pr.inject cut  --video <id> --start 42.0 --end 55.5 --steps 4
 uv run python -m pr.inject swap --video <id> --a 20,35 --b 50,70 --steps 2,4
 
-# full evaluation
+# full evaluation (--dry-run: cached results only, no API calls)
 uv run python scripts/run_eval.py
+uv run python tests/test_score.py
 ```
 
 Every API call is logged with tokens/frames and estimated cost to `results/costs.csv`.
@@ -80,7 +81,8 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `src/pr/inject.py` | ffmpeg cut / swap flaw injection, ground truth + attribution logging | day 1 |
 | `src/pr/align.py`, `src/pr/judge.py` | Align trainee timeline to checklist; flag missing / out-of-order | stub |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
-| `scripts/run_eval.py` | Scores detections against ground truth | day 1 (scoring) |
+| `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
+| `scripts/run_eval.py` | Runs the pipeline over the manifest and scores it against ground truth | day 1 (stages stubbed) |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
 ## Third-party

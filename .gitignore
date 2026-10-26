@@ -1,0 +1,30 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# videos and large binaries: never commit (repo will be public)
+data/raw/
+data/edited/
+data/proxy/
+*.mp4
+*.mov
+*.MP4
+*.MOV
+*.mkv
+*.webm
+*.avi
+
+# generated results: only summary.md, PNG charts and checklists are committed
+results/*
+!results/summary.md
+!results/*.png
+!results/checklists/
+results/checklists/*
+!results/checklists/*.json
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

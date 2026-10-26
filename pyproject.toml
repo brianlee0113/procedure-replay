@@ -1,0 +1,21 @@
+[project]
+name = "procedure-replay"
+version = "0.1.0"
+description = "Learn a manual procedure from one reference video, then flag skipped or out-of-order steps in another person's video."
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "meta-sam-parser>=0.1.0",
+    "numpy>=2.4.6",
+    "openai>=3.38.0",
+    "opencv-python-headless>=5.0.0.93",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "pr"

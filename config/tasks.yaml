@@ -1,0 +1,22 @@
+# Per task: SAM 3.1 concept prompts and the expected number of steps.
+# SAM 3.1 takes ONE short noun phrase per request (no lists, commands, or questions),
+# so each prompt below costs one request per video. Keep each well under 32 tokens.
+# Candidates; revise once the licensed footage is chosen.
+
+toner_replacement:
+  name: Printer toner cartridge replacement
+  expected_steps: 6
+  object_prompts:
+    - toner cartridge
+    - printer front cover
+    - hand
+    - protective tape
+
+flatpack_assembly:
+  name: Flat-pack furniture assembly
+  expected_steps: 7
+  object_prompts:
+    - wooden panel
+    - screwdriver
+    - allen key
+    - screw

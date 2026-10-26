@@ -1,8 +1,13 @@
 """Inject a known flaw into a trainee video by editing, so ground truth is exact.
 
-    uv run python -m pr.inject cut  --video ID --start 42 --end 55.5 --steps 4
+    uv run python -m pr.inject cut  --video ID --step "add ram"                       # range from keystep labels
+    uv run python -m pr.inject swap --video ID --step-a "add battery" --step-b "attach fan"
+    uv run python -m pr.inject cut  --video ID --start 42 --end 55.5 --steps 4         # explicit range
     uv run python -m pr.inject swap --video ID --a 20,35 --b 50,70 --steps 2,4
     uv run python -m pr.inject none --video ID          # register an unedited trainee video
+
+--step looks the range up in data/keysteps/<video_id>.json (written by scripts/import_indego.py) and the
+step number in the task's `keysteps` list in config/tasks.yaml.
 
 Each edit writes data/edited/<new_id>.mp4 and appends:
 - a manifest row (same creator / source / license as the source video, role trainee),
@@ -16,6 +21,8 @@ import json
 import sys
 from datetime import date
 from pathlib import Path
+
+import yaml
 
 from pr.frames import probe, run
 from pr.license_check import ROOT, LicenseError, append_manifest_row, load_manifest, local_path, require_allowed
@@ -44,9 +51,27 @@ def splice(src: Path, segments: list[tuple[float, float]], out: Path, has_audio:
 
 
 def step_list(task: str) -> list[str]:
-    """Step titles from the task's reference checklist, if smoke_steps / run_eval has produced it."""
+    """The task's keysteps from config/tasks.yaml, else step titles from its reference checklist."""
+    cfg = yaml.safe_load((ROOT / "config" / "tasks.yaml").read_text()).get(task, {})
+    if cfg.get("keysteps"):
+        return cfg["keysteps"]
     path = ROOT / "results" / "checklists" / f"{task}.json"
     return [s["title"] for s in json.loads(path.read_text())["steps"]] if path.exists() else []
+
+
+def keystep_range(video_id: str, task: str, name: str) -> tuple[float, float, int]:
+    """(start, end, 1-based step number) of a labelled keystep in the source video."""
+    path = ROOT / "data" / "keysteps" / f"{video_id}.json"
+    if not path.exists():
+        raise SystemExit(f"refused: no keystep labels at {path.relative_to(ROOT)} (run scripts/import_indego.py)")
+    segs = [s for s in json.loads(path.read_text()) if s["step"] == name]
+    steps = step_list(task)
+    if not segs or name not in steps:
+        raise SystemExit(f"refused: step {name!r} not labelled in {video_id}; labelled: "
+                         f"{sorted({s['step'] for s in json.loads(path.read_text())})}")
+    if len(segs) > 1:
+        print(f"note: {name!r} occurs {len(segs)}x in {video_id}; using the first occurrence")
+    return segs[0]["start"], segs[0]["end"], steps.index(name) + 1
 
 
 def log_attribution(source_id: str, line: str) -> None:
@@ -76,14 +101,17 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("cut", help="remove [start, end) — one step disappears")
     c.add_argument("--video", required=True)
-    c.add_argument("--start", type=float, required=True)
-    c.add_argument("--end", type=float, required=True)
-    c.add_argument("--steps", required=True, help="1-based step number(s) removed, e.g. 4")
+    c.add_argument("--step", help="keystep name to remove, e.g. 'add ram' (sets --start/--end/--steps)")
+    c.add_argument("--start", type=float)
+    c.add_argument("--end", type=float)
+    c.add_argument("--steps", help="1-based step number(s) removed, e.g. 4")
     s = sub.add_parser("swap", help="exchange two non-overlapping ranges — two steps change order")
     s.add_argument("--video", required=True)
-    s.add_argument("--a", type=parse_range, required=True, metavar="S1,E1")
-    s.add_argument("--b", type=parse_range, required=True, metavar="S2,E2")
-    s.add_argument("--steps", required=True, help="1-based step numbers swapped, e.g. 2,4")
+    s.add_argument("--step-a", help="keystep name, e.g. 'add battery' (sets --a and --steps)")
+    s.add_argument("--step-b", help="keystep name, e.g. 'attach fan' (sets --b and --steps)")
+    s.add_argument("--a", type=parse_range, metavar="S1,E1")
+    s.add_argument("--b", type=parse_range, metavar="S2,E2")
+    s.add_argument("--steps", help="1-based step numbers swapped, e.g. 2,4")
     n = sub.add_parser("none", help="register an unedited trainee video in ground truth")
     n.add_argument("--video", required=True)
     args = ap.parse_args(argv)
@@ -94,7 +122,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"refused: {e}")
         return 1
     vid, src = row["video_id"], local_path(row)
+    if args.cmd == "cut" and args.step:
+        args.start, args.end, n = keystep_range(vid, row["task"], args.step)
+        args.steps = args.steps or str(n)
+    if args.cmd == "swap" and args.step_a and args.step_b:
+        sa, ea, na = keystep_range(vid, row["task"], args.step_a)
+        sb, eb, nb = keystep_range(vid, row["task"], args.step_b)
+        args.a, args.b, args.steps = (sa, ea), (sb, eb), args.steps or f"{na},{nb}"
+    if args.cmd == "cut" and (args.start is None or args.end is None or not args.steps):
+        ap.error("cut needs --step, or --start, --end and --steps")
+    if args.cmd == "swap" and (args.a is None or args.b is None or not args.steps):
+        ap.error("swap needs --step-a and --step-b, or --a, --b and --steps")
     steps = [int(x) for x in args.steps.split(",")] if args.cmd != "none" else []
+    names = step_list(row["task"])
+    step_names = [names[i - 1] for i in steps if 0 < i <= len(names)]
 
     if args.cmd == "none":
         flaw = {"type": "none", "steps": [], "start_ts": None, "end_ts": None}
@@ -111,20 +152,21 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"refused: need 0 <= start < end <= {dur:.2f}")
                 return 1
             segments = [(0, a), (b, dur)]
-            gt_id = f"{vid}__cut_{a:g}-{b:g}"
-            flaw = {"type": "cut", "steps": steps, "start_ts": a, "end_ts": a, "source_ranges": [[a, b]]}
-            desc = f"cut {a:g}–{b:g} s (removes step {args.steps})"
+            gt_id = f"{vid}__cut_{a:.1f}-{b:.1f}"
+            flaw = {"type": "cut", "steps": steps, "step_names": step_names, "start_ts": a, "end_ts": a,
+                    "source_ranges": [[a, b]]}
+            desc = f"cut {a:.1f}–{b:.1f} s (removes step {args.steps}{': ' + ', '.join(step_names) if step_names else ''})"
         else:
             (s1, e1), (s2, e2) = sorted([args.a, args.b])
             if not (0 <= s1 < e1 <= s2 < e2 <= dur):
                 print(f"refused: need two non-overlapping ranges inside 0–{dur:.2f}")
                 return 1
             segments = [(0, s1), (s2, e2), (e1, s2), (s1, e1), (e2, dur)]
-            gt_id = f"{vid}__swap_{s1:g}-{e1:g}_{s2:g}-{e2:g}"
+            gt_id = f"{vid}__swap_{s1:.1f}-{e1:.1f}_{s2:.1f}-{e2:.1f}"
             # Edited timeline: [0,s1) unchanged, then B, gap, A; everything after e2 is unchanged.
-            flaw = {"type": "swap", "steps": steps, "start_ts": s1, "end_ts": e2,
+            flaw = {"type": "swap", "steps": steps, "step_names": step_names, "start_ts": s1, "end_ts": e2,
                     "source_ranges": [[s1, e1], [s2, e2]]}
-            desc = f"swapped {s1:g}–{e1:g} s with {s2:g}–{e2:g} s (steps {args.steps} out of order)"
+            desc = f"swapped {s1:.1f}–{e1:.1f} s with {s2:.1f}–{e2:.1f} s (steps {args.steps} out of order)"
         segments = [(x, y) for x, y in segments if y - x > 1e-3]
         if any(r["video_id"] == gt_id for r in load_manifest()):
             print(f"refused: {gt_id} already exists in the manifest")

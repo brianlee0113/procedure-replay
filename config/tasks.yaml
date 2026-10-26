@@ -1,22 +1,46 @@
-# Per task: SAM 3.1 concept prompts and the expected number of steps.
+# Per task: SAM 3.1 concept prompts, the expected steps, and where the footage comes from.
 # SAM 3.1 takes ONE short noun phrase per request (no lists, commands, or questions),
-# so each prompt below costs one request per video. Keep each well under 32 tokens.
-# Candidates; revise once the licensed footage is chosen.
+# so each prompt costs one request per video (billed per frame of the 5 fps proxy).
+#
+# Footage: IndEgo (Fraunhofer IPK, NeurIPS 2025), recorded on Project Aria glasses, CC BY 4.0.
+# https://huggingface.co/datasets/FraunhoferIPK/IndEgo  — Mistake_Detection/Task_<N>/mp4_480/
+# `keysteps` are IndEgo's human keystep labels, in the correct order.
+# `reference` is the correct take used to build the Guide; every other take is a trainee.
 
-toner_replacement:
-  name: Printer toner cartridge replacement
-  expected_steps: 6
+pc_repair:
+  name: Repairing a PC (install parts, clean, close, test)
+  indego_task: 22
+  reference: 22_u17_r03_c_01        # ~8 min, every keystep labelled
+  expected_steps: 9
+  keysteps: [open pc, add battery, add ram, attach hard disk, attach fan, attach power, clean, close pc, test]
   object_prompts:
-    - toner cartridge
-    - printer front cover
-    - hand
-    - protective tape
+    - computer case
+    - RAM stick
+    - hard disk drive
+    - cooling fan
+    - coin cell battery
+    - power cable
 
-flatpack_assembly:
-  name: Flat-pack furniture assembly
-  expected_steps: 7
+drill_bit:
+  name: Changing a drill bit
+  indego_task: 7
+  reference: 07_u01_r02_c_01        # ~50 s
+  expected_steps: 5
+  keysteps: [unplug, remove bit, insert bit, plug in, test]
   object_prompts:
-    - wooden panel
-    - screwdriver
-    - allen key
-    - screw
+    - electric drill
+    - drill bit
+    - power plug
+
+# Not used for evaluation: correct takes revisit steps (vertical bar -> holder bar -> vertical bar),
+# which would read as out-of-order. Kept so it can be switched back on.
+camera_stand:
+  name: Assembling a camera stand
+  indego_task: 23
+  reference: 23_u14_r04_c_01
+  expected_steps: 4
+  keysteps: [attach vertical bar, attach holder bar, attach camera, inspect]
+  object_prompts:
+    - camera stand
+    - camera
+    - metal bar

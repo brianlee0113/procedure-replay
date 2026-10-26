@@ -2,8 +2,8 @@
 
 Watch one expert do a manual task once. Then check anyone else doing it.
 
-ProcedureReplay turns a reference video of a manual procedure (replacing a printer toner cartridge,
-assembling flat-pack furniture) into an ordered checklist with timestamps and reference frames.
+ProcedureReplay turns a first-person video of an expert doing a manual procedure (repairing a PC,
+changing a drill bit), recorded hands-free on smart glasses, into an ordered checklist with timestamps and reference frames.
 Given a second video of a different person doing the same task, it tracks the same tools and parts,
 aligns the video to the checklist, and flags **skipped** or **out-of-order** steps at the exact timestamp.
 
@@ -40,9 +40,27 @@ uv run python -m pr.license_check
 
 ## Data
 
-Videos never go in git. Place licensed files in `data/raw/` yourself and register each in
-`data/manifest.csv` (video_id, task, creator, source_url, license, role, local_path) and `ATTRIBUTION.md`.
-Every script refuses a video whose manifest row lacks an allowed license (CC0, CC-BY, CC-BY-SA, Pexels, Pixabay).
+Footage: [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo) (Fraunhofer IPK, NeurIPS 2025), first-person
+industrial tasks recorded on **Project Aria glasses**, **CC BY 4.0**. Each task was done by 6 people, in correct (`_c_`)
+and mistake (`_m_`) takes, with human keystep labels. We use Task 22 (repairing a PC, 9 steps) and Task 7
+(changing a drill bit, 5 steps); see `config/tasks.yaml`.
+
+Videos never go in git. Download only the 480p videos and annotations (~0.9 GB; the full dataset is ~19 TB):
+
+```bash
+uvx --from huggingface_hub hf download FraunhoferIPK/IndEgo --repo-type dataset --local-dir data/raw/indego \
+  --include "Mistake_Detection/Task_22/mp4_480/*" \
+  --include "Mistake_Detection/Task_22/annotations/keystep_annotations/*" \
+  --include "Mistake_Detection/Task_7/mp4_480/*" \
+  --include "Mistake_Detection/Task_7/annotations/keystep_annotations/*" \
+  --include "Mistake_Detection/renamed_annotation_mistakes/A_Task_22.txt" \
+  --include "Mistake_Detection/renamed_annotation_mistakes/A_Task_07.txt"
+uv run python scripts/import_indego.py --drop-examples   # manifest, ATTRIBUTION, data/keysteps/, real-mistake labels
+```
+
+Every video is listed in `data/manifest.csv` (video_id, task, creator, source_url, license, role, local_path) and
+`ATTRIBUTION.md`. Every script refuses a video whose manifest row lacks an allowed license (CC0, CC-BY, CC-BY-SA,
+Pexels, Pixabay).
 
 `data/ground_truth.jsonl` has one row per trainee video. `injected_flaw.type` is `none`, `cut`, or `swap`;
 `steps` are 1-based step numbers from `step_list`; `start_ts`/`end_ts` are seconds in the **edited** video
@@ -52,13 +70,14 @@ Every script refuses a video whose manifest row lacks an allowed license (CC0, C
 
 ```bash
 # smoke tests (each prints PASS/FAIL with evidence)
-uv run python scripts/smoke_sam.py data/raw/<video>.mp4 --task toner_replacement
-uv run python scripts/smoke_steps.py data/raw/<reference>.mp4 --task toner_replacement
-uv run python scripts/smoke_cross_creator.py data/raw/<a>.mp4 data/raw/<b>.mp4 --task toner_replacement
+uv run python scripts/smoke_sam.py data/raw/<video>.mp4 --task pc_repair
+uv run python scripts/smoke_steps.py data/raw/<reference>.mp4 --task pc_repair
+uv run python scripts/smoke_cross_creator.py data/raw/<a>.mp4 data/raw/<b>.mp4 --task pc_repair
 
-# inject a known flaw into a trainee video
-uv run python -m pr.inject cut  --video <id> --start 42.0 --end 55.5 --steps 4
-uv run python -m pr.inject swap --video <id> --a 20,35 --b 50,70 --steps 2,4
+# inject a known flaw into a trainee video (ranges come from IndEgo's keystep labels)
+uv run python -m pr.inject cut  --video 22_u14_r03_c_01 --step "add ram"
+uv run python -m pr.inject swap --video 22_u15_r03_c_01 --step-a "add battery" --step-b "attach fan"
+uv run python -m pr.inject none --video 22_u16_r03_c_01
 
 # full evaluation (--dry-run: cached results only, no API calls)
 uv run python scripts/run_eval.py
@@ -78,7 +97,8 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `src/pr/frames.py` | ffprobe, 5 fps proxy with burned-in clock, trimming, frame grabs | day 1 |
 | `src/pr/track.py` | SAM output → per-object presence timeline | day 1 |
 | `src/pr/steps.py` | Muse Spark → checklist JSON with timestamps and reference frames | day 1 |
-| `src/pr/inject.py` | ffmpeg cut / swap flaw injection, ground truth + attribution logging | day 1 |
+| `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name, ground truth + attribution logging | day 1 |
+| `scripts/import_indego.py` | Registers downloaded IndEgo videos: manifest, attribution, keystep labels, real-mistake labels | day 1 |
 | `src/pr/align.py`, `src/pr/judge.py` | Align trainee timeline to checklist; flag missing / out-of-order | stub |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
@@ -102,7 +122,9 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 
 **Models** (via [Meta Model API](https://dev.meta.ai/docs)): Muse Spark 1.3 (`muse-spark-1.3-contributor`), SAM 3.1 (`sam-3.1`).
 
-**Videos**: see [ATTRIBUTION.md](ATTRIBUTION.md).
+**Videos**: [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo), Fraunhofer IPK (Chavan et al., NeurIPS 2025),
+CC BY 4.0, recorded on Project Aria glasses. Keystep and mistake labels are IndEgo's. Per-video list and our edits:
+[ATTRIBUTION.md](ATTRIBUTION.md).
 
 ## License
 

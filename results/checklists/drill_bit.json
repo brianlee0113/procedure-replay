@@ -1,0 +1,68 @@
+{
+  "steps": [
+    {
+      "description": "The person holds the drill with both hands and slides the battery pack off the base, placing it on the table.",
+      "end_s": 7.0,
+      "index": 1,
+      "key_objects": [
+        "electric drill",
+        "power plug"
+      ],
+      "start_s": 4.0,
+      "title": "Remove the battery pack",
+      "reference_frame": "results/checklists/drill_bit_step01.jpg"
+    },
+    {
+      "description": "The person loosens the chuck by hand and pulls the old bit out of the drill, then sets it down on the table.",
+      "end_s": 16.0,
+      "index": 2,
+      "key_objects": [
+        "electric drill",
+        "drill bit"
+      ],
+      "start_s": 8.0,
+      "title": "Remove the old drill bit",
+      "reference_frame": "results/checklists/drill_bit_step02.jpg"
+    },
+    {
+      "description": "The person opens the bit case on the side table and picks out a new drill bit with the fingers.",
+      "end_s": 22.8,
+      "index": 3,
+      "key_objects": [
+        "drill bit"
+      ],
+      "start_s": 19.5,
+      "title": "Select a new drill bit",
+      "reference_frame": "results/checklists/drill_bit_step03.jpg"
+    },
+    {
+      "description": "The person inserts the new bit into the chuck and twists the chuck tight to secure it.",
+      "end_s": 38.5,
+      "index": 4,
+      "key_objects": [
+        "electric drill",
+        "drill bit"
+      ],
+      "start_s": 24.0,
+      "title": "Install the new drill bit",
+      "reference_frame": "results/checklists/drill_bit_step04.jpg"
+    },
+    {
+      "description": "The person picks up the battery pack and slides it back onto the base of the drill until seated.",
+      "end_s": 43.5,
+      "index": 5,
+      "key_objects": [
+        "electric drill",
+        "power plug"
+      ],
+      "start_s": 40.5,
+      "title": "Reattach the battery pack",
+      "reference_frame": "results/checklists/drill_bit_step05.jpg"
+    }
+  ],
+  "task_summary": "Change the drill bit on a cordless electric drill by disconnecting power, swapping the bit, and reconnecting power.",
+  "task": "drill_bit",
+  "reference_video": "07_u01_r02_c_01",
+  "duration": 51.4,
+  "model": "muse-spark-1.3-contributor"
+}

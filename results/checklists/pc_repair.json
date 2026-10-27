@@ -1,0 +1,109 @@
+{
+  "steps": [
+    {
+      "description": "The hands unscrew the rear thumbscrew and slide the black side panel off to expose the interior.",
+      "end_s": 31.0,
+      "index": 1,
+      "key_objects": [
+        "computer case"
+      ],
+      "start_s": 7.0,
+      "title": "Remove the side panel",
+      "reference_frame": "results/checklists/pc_repair_step01.jpg"
+    },
+    {
+      "description": "The hands insert the small round CMOS battery into its socket on the motherboard.",
+      "end_s": 103.0,
+      "index": 2,
+      "key_objects": [
+        "coin cell battery"
+      ],
+      "start_s": 95.0,
+      "title": "Install the coin cell battery",
+      "reference_frame": "results/checklists/pc_repair_step02.jpg"
+    },
+    {
+      "description": "The hands seat the green RAM modules into the blue memory slots and press the clips closed.",
+      "end_s": 182.0,
+      "index": 3,
+      "key_objects": [
+        "RAM stick"
+      ],
+      "start_s": 109.0,
+      "title": "Install the RAM sticks",
+      "reference_frame": "results/checklists/pc_repair_step03.jpg"
+    },
+    {
+      "description": "The hands plug the red data lead and power leads into the hard disk drive in the front bay.",
+      "end_s": 206.0,
+      "index": 4,
+      "key_objects": [
+        "hard disk drive"
+      ],
+      "start_s": 190.0,
+      "title": "Connect the hard disk drive",
+      "reference_frame": "results/checklists/pc_repair_step04.jpg"
+    },
+    {
+      "description": "The hands route the PSU leads and seat the system power connectors onto the motherboard.",
+      "end_s": 257.0,
+      "index": 5,
+      "key_objects": [
+        "power cable"
+      ],
+      "start_s": 215.0,
+      "title": "Connect system power to motherboard",
+      "reference_frame": "results/checklists/pc_repair_step05.jpg"
+    },
+    {
+      "description": "The hands plug the rear cooling fan lead into its motherboard fan header.",
+      "end_s": 289.0,
+      "index": 6,
+      "key_objects": [
+        "cooling fan"
+      ],
+      "start_s": 259.0,
+      "title": "Connect the cooling fan cable",
+      "reference_frame": "results/checklists/pc_repair_step06.jpg"
+    },
+    {
+      "description": "The hands wipe the inside of the open chassis with the blue cleaning cloth.",
+      "end_s": 319.0,
+      "index": 7,
+      "key_objects": [
+        "computer case"
+      ],
+      "start_s": 298.0,
+      "title": "Clean the interior with cloth",
+      "reference_frame": "results/checklists/pc_repair_step07.jpg"
+    },
+    {
+      "description": "The hands fit the side panel back onto the chassis and retighten the rear thumbscrew.",
+      "end_s": 370.0,
+      "index": 8,
+      "key_objects": [
+        "computer case"
+      ],
+      "start_s": 322.0,
+      "title": "Replace the side panel",
+      "reference_frame": "results/checklists/pc_repair_step08.jpg"
+    },
+    {
+      "description": "The hands connect mains and display cables and power on the PC to verify the boot screen.",
+      "end_s": 474.0,
+      "index": 9,
+      "key_objects": [
+        "computer case",
+        "power cable"
+      ],
+      "start_s": 379.0,
+      "title": "Connect power and test boot",
+      "reference_frame": "results/checklists/pc_repair_step09.jpg"
+    }
+  ],
+  "task_summary": "Open the PC, install battery and RAM, connect HDD, power and fan, clean, close case and test boot.",
+  "task": "pc_repair",
+  "reference_video": "22_u17_r03_c_01",
+  "duration": 491.650998,
+  "model": "muse-spark-1.3-contributor"
+}

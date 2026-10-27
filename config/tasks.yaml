@@ -33,7 +33,7 @@ drill_bit:
   object_prompts:
     - electric drill
     - drill bit
-    - power plug
+    - power cord                     # 'power plug' found nothing in the smoke test
 
 home_cooking:
   name: Herb omelet with fried tomatoes (home kitchen)
@@ -60,7 +60,8 @@ home_cooking:
     - frying pan
     - tomato
     - egg
-    - mixing bowl
+    - bowl                           # 'mixing bowl' found nothing; 'bowl' 97% (smoke test)
+    - cutting board
     - wooden spoon
     - plate
 

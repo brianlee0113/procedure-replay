@@ -1,0 +1,58 @@
+# xcodegen spec. Generate the project with: cd ios && xcodegen
+name: ProcedureReplay
+options:
+  bundleIdPrefix: com.procedurereplay
+  deploymentTarget:
+    iOS: "26.0"
+packages:
+  MWDAT:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    exactVersion: 1.0.1
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  ProcedureReplay:
+    type: application
+    platform: iOS
+    sources:
+      - path: ProcedureReplay
+    info:
+      path: ProcedureReplay/Info.plist
+      properties:
+        CFBundleDisplayName: ProcedureReplay
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        CFBundleURLTypes:
+          - CFBundleURLName: $(PRODUCT_BUNDLE_IDENTIFIER)
+            CFBundleURLSchemes: [procedurereplay]
+        # Meta Wearables Device Access Toolkit (required even with MockDeviceKit since DAT 0.9.0).
+        # With Developer Mode on in the Meta AI app, MetaAppID and ClientToken may stay empty.
+        MWDAT:
+          AppLinkURLScheme: procedurereplay://
+          MetaAppID: ""
+          ClientToken: ""
+          TeamID: $(DEVELOPMENT_TEAM)
+          # Opt out of the SDK's usage analytics (on by default; README "Analytics").
+          Analytics:
+            OptOut: true
+        UIBackgroundModes: [processing, bluetooth-central, bluetooth-peripheral, external-accessory]
+        UISupportedExternalAccessoryProtocols: [com.meta.ar.wearable]
+        NSBluetoothAlwaysUsageDescription: Needed to connect to Meta AI glasses.
+        NSBluetoothPeripheralUsageDescription: Needed to connect to Meta AI glasses.
+        NSLocalNetworkUsageDescription: Lets your phone find and connect to your glasses over Wi-Fi.
+        NSBonjourServices: [_bonjour._tcp]
+        NSMicrophoneUsageDescription: Records your explanation while you work.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.procedurereplay.app
+        GENERATE_INFOPLIST_FILE: NO
+    dependencies:
+      - package: MWDAT
+        product: MWDATCore
+      - package: MWDAT
+        product: MWDATCamera
+      - package: MWDAT
+        product: MWDATMockDevice

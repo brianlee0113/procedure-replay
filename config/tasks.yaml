@@ -38,17 +38,17 @@ drill_bit:
 home_cooking:
   name: Herb omelet with fried tomatoes (home kitchen)
   captaincook_activity: Herb Omelet with Fried Tomatoes
-  reference: cc4d_22_8               # ~10 min, normal take
+  reference: cc4d_22_21              # ~12 min, normal take that follows the recipe graph (22_8 heats the pan too early)
   expected_steps: 15
   keysteps:
-    - chop 2 tbsp cilantro
-    - heat 1 tbsp oil in a non-stick frying pan
-    - add 1/2 tsp ground black pepper to the bowl
     - take a tomato
-    - add the chopped cilantro to the bowl
+    - chop 2 tbsp cilantro
     - crack one egg in a bowl
     - cut tomato into two pieces
+    - add the chopped cilantro to the bowl
+    - add 1/2 tsp ground black pepper to the bowl
     - beat the contents of the bowl
+    - heat 1 tbsp oil in a non-stick frying pan
     - cook the tomatoes cut-side down until they start to soften and colour
     - scoop the tomatoes from the pan
     - put tomatoes on a serving plate

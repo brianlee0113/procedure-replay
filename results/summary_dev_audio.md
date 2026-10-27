@@ -47,4 +47,4 @@ with no false flags and fewer extra flags. That matches Meta's note that audio u
 1.3 is not fully supported and can degrade quality. 1.2 with audio sits in between and is less reliable.
 3 runs on 11 videos is still small; the two PC cuts (fan, power) are missed by every variant.
 
-Cost of these experiments: $0.50 (transcription $0.06, reviews $0.44).
+Cost of these experiments: $0.50 (transcription $0.17, reviews $0.33).

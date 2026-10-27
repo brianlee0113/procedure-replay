@@ -4,8 +4,8 @@ Watch one expert do a manual task once. Then check anyone else doing it.
 
 ProcedureReplay turns a first-person video of an expert doing a manual procedure (repairing a PC,
 changing a drill bit), recorded hands-free on smart glasses, into an ordered checklist with timestamps and reference frames.
-Given a second video of a different person doing the same task, it tracks the same tools and parts,
-aligns the video to the checklist, and flags **skipped** or **out-of-order** steps at the exact timestamp.
+Given a second video of a different person doing the same task, it checks every step of the checklist
+against that video and flags **skipped** or **out-of-order** steps at the timestamp where they show.
 
 Built for the Meta Global AI Developer Hackathon (indie track, "Push the Frontier", manufacturing),
 Oct 26 – Nov 4, 2026.
@@ -13,16 +13,18 @@ Oct 26 – Nov 4, 2026.
 ## Pipeline
 
 ```
-reference video ─► license gate ─► 5 fps proxy ─┬─► Muse Spark 1.3  ─► ordered steps + timestamps (checklist)
-                                                └─► SAM 3.1 (1 call per object prompt) ─► object presence timeline
-trainee video   ─► license gate ─► 5 fps proxy ───► SAM 3.1 ─► presence timeline ─► align to checklist
-                                                                                    ─► judge: ok / missing / out_of_order
+expert's step names ─┐
+reference video ─► license gate ─► 5 fps proxy ─► Muse Spark 1.3 ─► checklist: steps, "done when", times
+trainee video   ─► license gate ─► 5 fps proxy ─► Muse Spark 1.3 (whole checklist, then each "not done"
+                                                  step again on its own) ─► per step: done? when? evidence
+                                                ─► judge (order rules) ─► ok / missing / out_of_order
 evaluation: edited videos with a known injected flaw (cut or swap) ─► detected X/6, false flags Y/2
 ```
 
-- **Muse Spark 1.3** (Meta Model API, Responses API + JSON-schema structured output) segments the
-  reference video into steps.
-- **SAM 3.1** (Meta Model API) tracks text-prompted tools and parts across every frame.
+- **Muse Spark 1.3** (Meta Model API, Responses API + JSON-schema structured output) writes the checklist
+  from the reference video and decides, for the trainee video, which steps were done and when.
+- **SAM 3.1** (Meta Model API) is *not* part of the decision: smoke tests showed it can't see small parts
+  (RAM, coin battery) on 480p glasses footage. It is used for evidence visuals (object masks) only.
 - Videos are re-encoded to a 5 fps 720p proxy with a burned-in clock, so frame index ↔ seconds is exact
   for both models and SAM's per-frame cost stays low.
 
@@ -99,7 +101,8 @@ uv run python -m pr.inject none --video 22_u16_r03_c_01
 # full evaluation (--dry-run: cached results only, no API calls)
 uv run python scripts/run_eval.py               # held-out test set: data/ground_truth.jsonl
 uv run python scripts/run_eval.py --set dev     # dev set: data/ground_truth_dev.jsonl
-uv run python tests/test_score.py
+uv run python scripts/run_eval.py --set dev --runs 1,2,3   # 3 independent reviews per video + majority vote
+uv run python tests/test_score.py && uv run python tests/test_judge.py && uv run python tests/test_vote.py
 ```
 
 **Dev / test split.** Prompts and pipeline changes are tuned on the dev set only: flaws injected into
@@ -108,6 +111,33 @@ is re-scored only to report results. Videos of both sets and their source takes 
 learning order rules.
 
 Every API call is logged with tokens/frames and estimated cost to `results/costs.csv`.
+
+## What the evaluation does and doesn't show
+
+- **Scope.** The expert gives the step *names* (the dataset's keystep labels); Muse Spark writes each step's
+  description, "done when" and timing from the reference video, then reviews trainee videos. This tests
+  "Guide from an expert's step list + review of other people", not discovering a procedure from video alone.
+- **Scoring.** A cut counts as detected if the cut step is flagged missing (no time check: a step that never
+  happens has no place in the video, and PC parts go in any order). A swap needs an out-of-order flag on a
+  swapped step within ±5 s of the moved span. Wrong flags raised next to the right one are reported as
+  "extra flags on flawed videos".
+- **Size.** 3 tasks, 6 injected flaws + 2 clean videos in the test set, taken from overlapping people and
+  takes. Even treated as independent, 3/6 has a 95% Wilson interval of about 19–81%. Results are
+  exploratory, not a general accuracy figure.
+
+Test-set history (held-out; each line is a different pipeline):
+
+| Pipeline | Detected | False flags | Note |
+| --- | --- | --- | --- |
+| v1: Muse Spark splits the reference itself, steps mapped by time overlap | 4/6 | 0/2 | first eval |
+| v2: checklist from expert step names, purpose-based review, re-check (tuned on dev) | 3/6 | 1/2 | |
+
+Known reasons for the v2 test misses, found after scoring and **not** used to change the test set:
+the fan and drill-bit cuts were made before cuts were padded, so part of the action is left in the video;
+the omelet swap was read in checklist order instead of from the clock (the same video was detected by v1);
+the false flag is "test the PC" on a correct take whose monitor stays black to the end, while the Guide's
+"done when" asks for a boot screen (seen in the reference). That last one is what an expert's edit of the
+Guide is for.
 
 ## Built during the hackathon
 
@@ -123,11 +153,11 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name (cuts padded ±3 s), dev/test ground truth + attribution logging; refuses swaps a recipe allows | day 1–2 |
 | `scripts/import_indego.py` | Registers downloaded IndEgo videos: manifest, attribution, keystep labels, real-mistake labels | day 1 |
 | `scripts/import_captaincook.py` | Prints CaptainCook4D download commands; registers videos, step labels, recipe graph, real-error labels | day 1 |
-| `src/pr/align.py` | Muse Spark reviews a trainee video against the reference checklist (done? when?, judged by purpose), re-checks each "not done" step on its own | day 1–2 |
+| `src/pr/align.py` | Muse Spark reviews a trainee video against the reference checklist (done? when?, judged by purpose), re-checks each "not done" step on its own, asks again for steps it skipped; independent runs + per-step vote | day 1–2 |
 | `src/pr/judge.py`, `src/pr/order.py` | Missing / out-of-order flags; order rules from the recipe graph or learned from correct takes | day 1 |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
-| `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
-| `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth | day 1–2 |
+| `src/pr/score.py`, `tests/test_*.py` | Scoring rule (detected / false flag / extra flags) + checks for scoring, judging, voting | day 1–2 |
+| `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth; per run, first pass vs re-check, and vote | day 1–2 |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
 ## Third-party

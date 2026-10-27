@@ -62,7 +62,7 @@ def _retry(fn, attempts: int = 5):
             delay *= 2
 
 
-def _sha256(path: Path) -> str:
+def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
@@ -93,13 +93,19 @@ def log_cost(model: str, purpose: str, video_id: str, *, input_tokens=0, cached_
     return usd
 
 
+def spark_model_name() -> str:
+    """The Muse Spark model MetaClient would use, without needing an API key (for cache checks)."""
+    load_dotenv(ROOT / ".env")
+    return os.environ.get("MODEL_NAME") or "muse-spark-1.3-contributor"
+
+
 class MetaClient:
     def __init__(self):
         load_dotenv(ROOT / ".env")
         key = os.environ.get("META_API_KEY")
         if not key:
             raise SystemExit("META_API_KEY is not set. Copy .env.example to .env and add your key.")
-        self.spark_model = os.environ.get("MODEL_NAME") or "muse-spark-1.3-contributor"
+        self.spark_model = spark_model_name()
         self.sam_model = os.environ.get("SAM_MODEL") or "sam-3.1"
         # Retries are handled by _retry so streams and uploads share one policy.
         self.api = OpenAI(base_url=BASE_URL, api_key=key, max_retries=0, timeout=900)
@@ -107,7 +113,7 @@ class MetaClient:
     def upload(self, path: Path) -> str:
         """Upload once per file content (sha256 cache); files expire after 7 days to stay under the team quota."""
         cache = json.loads(FILE_CACHE.read_text()) if FILE_CACHE.exists() else {}
-        digest = _sha256(path)
+        digest = sha256_file(path)
         if digest in cache:
             return cache[digest]
 

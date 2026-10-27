@@ -17,11 +17,13 @@ cases = [
     (SWAP, [{"type": "ok", "step": 2, "ts": 50.0}], False),
     (NONE, [{"type": "ok", "step": 1, "ts": 3.0}], True),
     (NONE, [{"type": "missing", "step": 1, "ts": 3.0}], False),
+    (CUT, [{"type": "missing", "step": 4, "ts": 44.0}, {"type": "missing", "step": 1, "ts": 9.0}], True),  # + 1 extra
 ]
 scores = []
 for flaw, flags, expected in cases:
     s = score_video(flaw, flags, tol=5.0)
     assert s["ok"] is expected, (flaw, flags, s)
     scores.append(s)
-assert summarize(scores) == {"detected": 3, "n_flawed": 8, "false_flags": 1, "n_clean": 2}, summarize(scores)
+assert summarize(scores) == {"detected": 4, "n_flawed": 9, "false_flags": 1, "n_clean": 2,
+                             "extra_on_flawed": 4}, summarize(scores)
 print(f"{len(cases)} scoring cases pass")

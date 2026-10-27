@@ -8,6 +8,8 @@ A cut has no timestamp check: a step that never happens has no place in the vide
 several orders (PC repair: the five parts go in any order) there is no single "where it should have been".
 The missing flag's ts is when it should have been noticed (see pr.judge), which is what the Review shows.
 An unedited video is a false flag if it has any flag other than "ok".
+Detection alone doesn't penalise wrong flags raised next to the right one, so every flag on a flawed video
+that matches nothing injected is counted as "extra".
 """
 
 EXPECTED_TYPE = {"cut": "missing", "swap": "out_of_order"}
@@ -23,18 +25,25 @@ def flag_matches(flag: dict, flaw: dict, tol: float) -> bool:
 
 
 def score_video(flaw: dict, flags: list[dict], tol: float = 5.0) -> dict:
-    """Return {kind: flawed|clean, ok: bool, status, n_flags, hit}."""
+    """Return {kind: flawed|clean, ok: bool, status, n_flags, extra, hit}."""
     raised = [f for f in flags if f.get("type") != "ok"]
     if flaw["type"] == "none":
         return {"kind": "clean", "ok": not raised, "status": "clean" if not raised else "FALSE FLAG",
-                "n_flags": len(raised), "hit": None}
-    hit = next((f for f in raised if flag_matches(f, flaw, tol)), None)
-    return {"kind": "flawed", "ok": hit is not None, "status": "detected" if hit else "missed",
-            "n_flags": len(raised), "hit": hit}
+                "n_flags": len(raised), "extra": len(raised), "hit": None}
+    hits = [f for f in raised if flag_matches(f, flaw, tol)]
+    return {"kind": "flawed", "ok": bool(hits), "status": "detected" if hits else "missed",
+            "n_flags": len(raised), "extra": len(raised) - len(hits), "hit": hits[0] if hits else None}
+
+
+def incomplete(flaw: dict) -> dict:
+    """Score for a video whose report left steps unanswered: it counts as a failure either way."""
+    kind = "clean" if flaw["type"] == "none" else "flawed"
+    return {"kind": kind, "ok": False, "status": "INCOMPLETE", "n_flags": 0, "extra": 0, "hit": None}
 
 
 def summarize(scores: list[dict]) -> dict:
     flawed = [s for s in scores if s["kind"] == "flawed"]
     clean = [s for s in scores if s["kind"] == "clean"]
     return {"detected": sum(s["ok"] for s in flawed), "n_flawed": len(flawed),
-            "false_flags": sum(not s["ok"] for s in clean), "n_clean": len(clean)}
+            "false_flags": sum(not s["ok"] for s in clean), "n_clean": len(clean),
+            "extra_on_flawed": sum(s["extra"] for s in flawed)}

@@ -1,0 +1,22 @@
+[
+ {
+  "step": "open pc",
+  "start": 6.46,
+  "end": 20.56
+ },
+ {
+  "step": "clean",
+  "start": 21.68,
+  "end": 45.77
+ },
+ {
+  "step": "close pc",
+  "start": 46.4,
+  "end": 75.9
+ },
+ {
+  "step": "test",
+  "start": 76.67,
+  "end": 101.02
+ }
+]

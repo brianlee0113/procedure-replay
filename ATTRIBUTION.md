@@ -20,4 +20,440 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 
 ## Videos
 
-_None yet. Add an entry per video when placing it in `data/raw/`._
+### IndEgo dataset
+- Title: IndEgo — industrial egocentric dataset, Mistake_Detection subset
+- Creator: IndEgo, Fraunhofer IPK (Chavan et al., NeurIPS 2025)
+- Source: https://huggingface.co/datasets/FraunhoferIPK/IndEgo
+- License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+- Camera: Project Aria glasses (first-person). We use the 480p MP4s and the keystep annotations.
+
+### 22_u01_r07_c_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_c_01_480.mp4
+- Edits:
+
+### 22_u01_r07_c_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_c_02_480.mp4
+- Edits:
+
+### 22_u01_r07_c_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_c_03_480.mp4
+- Edits:
+
+### 22_u01_r07_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_01_480.mp4
+- Edits:
+
+### 22_u01_r07_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_02_480.mp4
+- Edits:
+
+### 22_u01_r07_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_03_480.mp4
+- Edits:
+
+### 22_u01_r07_m_04
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_04_480.mp4
+- Edits:
+
+### 22_u01_r07_m_05
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_05_480.mp4
+- Edits:
+
+### 22_u01_r07_m_06
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_06_480.mp4
+- Edits:
+
+### 22_u01_r07_m_07
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_07_480.mp4
+- Edits:
+
+### 22_u01_r07_m_08
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_08_480.mp4
+- Edits:
+
+### 22_u01_r07_m_09
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_m_09_480.mp4
+- Edits:
+
+### 22_u02_r07_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_01_480.mp4
+- Edits:
+
+### 22_u02_r07_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_02_480.mp4
+- Edits:
+
+### 22_u02_r07_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_03_480.mp4
+- Edits:
+
+### 22_u02_r07_m_04
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_04_480.mp4
+- Edits:
+
+### 22_u02_r07_m_05
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_05_480.mp4
+- Edits:
+
+### 22_u02_r07_m_06
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u02_r07_m_06_480.mp4
+- Edits:
+
+### 22_u14_r03_c_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_c_01_480.mp4
+- Edits:
+
+### 22_u14_r03_c_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_c_02_480.mp4
+- Edits:
+
+### 22_u14_r03_c_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_c_03_480.mp4
+- Edits:
+
+### 22_u14_r03_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_m_01_480.mp4
+- Edits:
+
+### 22_u14_r03_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_m_02_480.mp4
+- Edits:
+
+### 22_u14_r03_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_m_03_480.mp4
+- Edits:
+
+### 22_u14_r03_m_04
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_m_04_480.mp4
+- Edits:
+
+### 22_u14_r03_m_05
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_m_05_480.mp4
+- Edits:
+
+### 22_u15_r03_c_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_01_480.mp4
+- Edits:
+
+### 22_u15_r03_c_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_02_480.mp4
+- Edits:
+
+### 22_u15_r03_c_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_03_480.mp4
+- Edits:
+
+### 22_u15_r03_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_m_01_480.mp4
+- Edits:
+
+### 22_u15_r03_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_m_02_480.mp4
+- Edits:
+
+### 22_u15_r03_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_m_03_480.mp4
+- Edits:
+
+### 22_u16_r03_c_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_01_480.mp4
+- Edits:
+
+### 22_u16_r03_c_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_02_480.mp4
+- Edits:
+
+### 22_u16_r03_c_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_03_480.mp4
+- Edits:
+
+### 22_u16_r03_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_m_01_480.mp4
+- Edits:
+
+### 22_u16_r03_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_m_02_480.mp4
+- Edits:
+
+### 22_u16_r03_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_m_03_480.mp4
+- Edits:
+
+### 22_u17_r03_c_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_c_01_480.mp4
+- Edits:
+
+### 22_u17_r03_c_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_c_02_480.mp4
+- Edits:
+
+### 22_u17_r03_c_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_c_03_480.mp4
+- Edits:
+
+### 22_u17_r03_m_01
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_m_01_480.mp4
+- Edits:
+
+### 22_u17_r03_m_02
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_m_02_480.mp4
+- Edits:
+
+### 22_u17_r03_m_03
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_m_03_480.mp4
+- Edits:
+
+### 22_u17_r03_m_04
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_m_04_480.mp4
+- Edits:
+
+### 22_u17_r03_m_05
+- IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_m_05_480.mp4
+- Edits:
+
+### 07_u01_r02_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_c_01_480.mp4
+- Edits:
+
+### 07_u01_r02_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_c_02_480.mp4
+- Edits:
+
+### 07_u01_r02_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_c_03_480.mp4
+- Edits:
+
+### 07_u01_r02_c_04
+- IndEgo Task 7 (Changing a drill bit), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_c_04_480.mp4
+- Edits:
+
+### 07_u01_r02_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_m_01_480.mp4
+- Edits:
+
+### 07_u01_r02_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_m_02_480.mp4
+- Edits:
+
+### 07_u01_r02_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_m_03_480.mp4
+- Edits:
+
+### 07_u01_r02_m_04
+- IndEgo Task 7 (Changing a drill bit), participant u01, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u01_r02_m_04_480.mp4
+- Edits:
+
+### 07_u02_r03_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_01_480.mp4
+- Edits:
+
+### 07_u02_r03_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_02_480.mp4
+- Edits:
+
+### 07_u02_r03_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_03_480.mp4
+- Edits:
+
+### 07_u02_r03_c_04
+- IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_04_480.mp4
+- Edits:
+
+### 07_u02_r03_c_05
+- IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_05_480.mp4
+- Edits:
+
+### 07_u02_r03_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_m_01_480.mp4
+- Edits:
+
+### 07_u02_r03_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_m_02_480.mp4
+- Edits:
+
+### 07_u02_r03_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u02, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_m_03_480.mp4
+- Edits:
+
+### 07_u14_r04_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_01_480.mp4
+- Edits:
+
+### 07_u14_r04_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_02_480.mp4
+- Edits:
+
+### 07_u14_r04_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_03_480.mp4
+- Edits:
+
+### 07_u14_r04_c_04
+- IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_04_480.mp4
+- Edits:
+
+### 07_u14_r04_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_m_01_480.mp4
+- Edits:
+
+### 07_u14_r04_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_m_02_480.mp4
+- Edits:
+
+### 07_u14_r04_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_m_03_480.mp4
+- Edits:
+
+### 07_u14_r04_m_04
+- IndEgo Task 7 (Changing a drill bit), participant u14, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_m_04_480.mp4
+- Edits:
+
+### 07_u15_r04_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_c_01_480.mp4
+- Edits:
+
+### 07_u15_r04_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_c_02_480.mp4
+- Edits:
+
+### 07_u15_r04_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_c_03_480.mp4
+- Edits:
+
+### 07_u15_r04_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_m_01_480.mp4
+- Edits:
+
+### 07_u15_r04_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_m_02_480.mp4
+- Edits:
+
+### 07_u15_r04_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_m_03_480.mp4
+- Edits:
+
+### 07_u15_r04_m_04
+- IndEgo Task 7 (Changing a drill bit), participant u15, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_m_04_480.mp4
+- Edits:
+
+### 07_u16_r04_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_c_01_480.mp4
+- Edits:
+
+### 07_u16_r04_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_c_02_480.mp4
+- Edits:
+
+### 07_u16_r04_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_c_03_480.mp4
+- Edits:
+
+### 07_u16_r04_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_m_01_480.mp4
+- Edits:
+
+### 07_u16_r04_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_m_02_480.mp4
+- Edits:
+
+### 07_u16_r04_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u16, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_m_03_480.mp4
+- Edits:
+
+### 07_u17_r03_c_01
+- IndEgo Task 7 (Changing a drill bit), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_c_01_480.mp4
+- Edits:
+
+### 07_u17_r03_c_02
+- IndEgo Task 7 (Changing a drill bit), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_c_02_480.mp4
+- Edits:
+
+### 07_u17_r03_c_03
+- IndEgo Task 7 (Changing a drill bit), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_c_03_480.mp4
+- Edits:
+
+### 07_u17_r03_m_01
+- IndEgo Task 7 (Changing a drill bit), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_m_01_480.mp4
+- Edits:
+
+### 07_u17_r03_m_02
+- IndEgo Task 7 (Changing a drill bit), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_m_02_480.mp4
+- Edits:
+
+### 07_u17_r03_m_03
+- IndEgo Task 7 (Changing a drill bit), participant u17, mistake take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u17_r03_m_03_480.mp4
+- Edits:
+
+### CaptainCook4D dataset
+- Title: CaptainCook4D — a dataset for understanding errors in procedural activities (GoPro 360p videos, step and error annotations)
+- Creator: CaptainCook4D, Peddi et al. (NeurIPS 2024 Datasets & Benchmarks), UT Dallas
+- Source: https://captaincook4d.github.io/captain-cook/ · videos via https://github.com/CaptainCook4D/downloader · annotations https://github.com/CaptainCook4D/annotations (MIT)
+- License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). Edited copies are marked under each video below.
+- Camera: head-mounted GoPro (first-person), real kitchens.
+
+### cc4d_22_2
+- CaptainCook4D recording 22_2 (Herb Omelet with Fried Tomatoes), person 3, error take · Apache-2.0 · https://utdallas.box.com/shared/static/7jebdusk67ce789seq83eztxy69nq0ea.mp4
+- Edits:
+
+### cc4d_22_4
+- CaptainCook4D recording 22_4 (Herb Omelet with Fried Tomatoes), person 1, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/l0ij0pqesxqsio06tfu4jxina9nkmbi5.mp4
+- Edits:
+
+### cc4d_22_6
+- CaptainCook4D recording 22_6 (Herb Omelet with Fried Tomatoes), person 7, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/nezy28ci1l6oibg0kys9k0t3omq18au8.mp4
+- Edits:
+
+### cc4d_22_8
+- CaptainCook4D recording 22_8 (Herb Omelet with Fried Tomatoes), person 7, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/w8y6eio1w0nf4ftsvcqqe39nq8hah57f.mp4
+- Edits:
+
+### cc4d_22_10
+- CaptainCook4D recording 22_10 (Herb Omelet with Fried Tomatoes), person 1, error take · Apache-2.0 · https://utdallas.box.com/shared/static/fc2zj768f205re8174mguwu5v8xw5jus.mp4
+- Edits:
+
+### cc4d_22_13
+- CaptainCook4D recording 22_13 (Herb Omelet with Fried Tomatoes), person 6, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/1c7yfihqsp4a4vaah8jlyrcx98cj0eyi.mp4
+- Edits:
+
+### cc4d_22_21
+- CaptainCook4D recording 22_21 (Herb Omelet with Fried Tomatoes), person 6, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/y47lej77kqpjipe5lddjeitqw1s821tq.mp4
+- Edits:
+
+### cc4d_22_24
+- CaptainCook4D recording 22_24 (Herb Omelet with Fried Tomatoes), person 1, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/5l7kc8wiwylq1s2xatbwab1r3exutbzl.mp4
+- Edits:
+
+### cc4d_22_26
+- CaptainCook4D recording 22_26 (Herb Omelet with Fried Tomatoes), person 6, error take · Apache-2.0 · https://utdallas.box.com/shared/static/vd1rcv6nhc9rhqvvpvtyraxz78s60pyd.mp4
+- Edits:
+
+### cc4d_22_30
+- CaptainCook4D recording 22_30 (Herb Omelet with Fried Tomatoes), person 6, error take · Apache-2.0 · https://utdallas.box.com/shared/static/vlpv6qtx0vdm9vo7iz44zavvl8t5eay0.mp4
+- Edits:
+
+### cc4d_22_31
+- CaptainCook4D recording 22_31 (Herb Omelet with Fried Tomatoes), person 3, error take · Apache-2.0 · https://utdallas.box.com/shared/static/ol7guf7qsefywyqtc8mzqiagbxe52y8t.mp4
+- Edits:
+
+### cc4d_22_32
+- CaptainCook4D recording 22_32 (Herb Omelet with Fried Tomatoes), person 1, error take · Apache-2.0 · https://utdallas.box.com/shared/static/o7vnx0k235xm01rubd4su5k3e60ei607.mp4
+- Edits:
+
+### cc4d_22_37
+- CaptainCook4D recording 22_37 (Herb Omelet with Fried Tomatoes), person 3, error take · Apache-2.0 · https://utdallas.box.com/shared/static/bikw5x0trdpjgd97v50rn9956dtl0mzt.mp4
+- Edits:
+
+### cc4d_22_38
+- CaptainCook4D recording 22_38 (Herb Omelet with Fried Tomatoes), person 7, error take · Apache-2.0 · https://utdallas.box.com/shared/static/w9fcspu35a2hxr7vzi7o78kil1xi9ojt.mp4
+- Edits:
+
+### cc4d_22_40
+- CaptainCook4D recording 22_40 (Herb Omelet with Fried Tomatoes), person 7, error take · Apache-2.0 · https://utdallas.box.com/shared/static/yfhn3ljomedumu29l6wgg2klzo1w0233.mp4
+- Edits:
+
+### cc4d_22_41
+- CaptainCook4D recording 22_41 (Herb Omelet with Fried Tomatoes), person 6, error take · Apache-2.0 · https://utdallas.box.com/shared/static/f744ph2u9utam5uma1zlfrrx2srk35is.mp4
+- Edits:
+
+### cc4d_22_137
+- CaptainCook4D recording 22_137 (Herb Omelet with Fried Tomatoes), person 3, error take · Apache-2.0 · https://utdallas.box.com/shared/static/5q1xb15a777rbofcrz6g9d1bfvi5c410.mp4
+- Edits:

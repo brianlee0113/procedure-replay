@@ -1,0 +1,37 @@
+[
+ {
+  "step": "chop 2 tbsp cilantro",
+  "start": 7.6,
+  "end": 213.61
+ },
+ {
+  "step": "add 1/2 tsp ground black pepper to the bowl",
+  "start": 228.05,
+  "end": 272.86
+ },
+ {
+  "step": "heat 1 tbsp oil in a non-stick frying pan",
+  "start": 273.81,
+  "end": 325.09
+ },
+ {
+  "step": "take a tomato",
+  "start": 338.31,
+  "end": 372.62
+ },
+ {
+  "step": "cut tomato into two pieces",
+  "start": 373.01,
+  "end": 380.81
+ },
+ {
+  "step": "cook the tomatoes cut-side down until they start to soften and colour",
+  "start": 392.3,
+  "end": 679.67
+ },
+ {
+  "step": "crack one egg in a bowl",
+  "start": 529.42,
+  "end": 619.27
+ }
+]

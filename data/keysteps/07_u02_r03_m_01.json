@@ -1,0 +1,17 @@
+[
+ {
+  "step": "remove bit",
+  "start": 3.53,
+  "end": 7.85
+ },
+ {
+  "step": "insert bit",
+  "start": 7.85,
+  "end": 14.84
+ },
+ {
+  "step": "test",
+  "start": 14.84,
+  "end": 19.05
+ }
+]

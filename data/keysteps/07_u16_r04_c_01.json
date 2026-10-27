@@ -1,0 +1,27 @@
+[
+ {
+  "step": "unplug",
+  "start": 6.2,
+  "end": 8.36
+ },
+ {
+  "step": "remove bit",
+  "start": 13.77,
+  "end": 20.56
+ },
+ {
+  "step": "insert bit",
+  "start": 21.74,
+  "end": 36.49
+ },
+ {
+  "step": "plug in",
+  "start": 42.35,
+  "end": 45.44
+ },
+ {
+  "step": "test",
+  "start": 47.29,
+  "end": 50.9
+ }
+]

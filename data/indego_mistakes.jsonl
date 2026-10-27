@@ -1,0 +1,52 @@
+{"video_id": "22_u01_r07_m_01", "task": "pc_repair", "indego_label": "didn't clean"}
+{"video_id": "22_u01_r07_m_02", "task": "pc_repair", "indego_label": "didn't clean"}
+{"video_id": "22_u01_r07_m_03", "task": "pc_repair", "indego_label": "didn't clean"}
+{"video_id": "22_u01_r07_m_04", "task": "pc_repair", "indego_label": "didn't add ram, didn't clean"}
+{"video_id": "22_u01_r07_m_05", "task": "pc_repair", "indego_label": "forgot cable, didn't attach fan"}
+{"video_id": "22_u01_r07_m_06", "task": "pc_repair", "indego_label": "didn't attach power, left rag"}
+{"video_id": "22_u01_r07_m_07", "task": "pc_repair", "indego_label": "didn't add battery, left tool, didn't close"}
+{"video_id": "22_u01_r07_m_08", "task": "pc_repair", "indego_label": "added battery loosely, forgot cable, didn't plug in"}
+{"video_id": "22_u01_r07_m_09", "task": "pc_repair", "indego_label": "didn't close, didn't test"}
+{"video_id": "22_u02_r07_m_01", "task": "pc_repair", "indego_label": "didn't add battery, didn't clean"}
+{"video_id": "22_u02_r07_m_02", "task": "pc_repair", "indego_label": "forgot cable, didn't attach fan, didn't clean"}
+{"video_id": "22_u02_r07_m_03", "task": "pc_repair", "indego_label": "didn't clean"}
+{"video_id": "22_u02_r07_m_04", "task": "pc_repair", "indego_label": "forgot cable, didn't attach fan, didn't attach power, left rag"}
+{"video_id": "22_u02_r07_m_05", "task": "pc_repair", "indego_label": "didn't attach fan, didn't attach power, didn't clean, didn't close"}
+{"video_id": "22_u02_r07_m_06", "task": "pc_repair", "indego_label": "added battery loosely"}
+{"video_id": "22_u14_r03_m_01", "task": "pc_repair", "indego_label": "attached power loosely, closed loosely, didn't test"}
+{"video_id": "22_u14_r03_m_02", "task": "pc_repair", "indego_label": "didn't add battery"}
+{"video_id": "22_u14_r03_m_03", "task": "pc_repair", "indego_label": "didn't add ram"}
+{"video_id": "22_u14_r03_m_04", "task": "pc_repair", "indego_label": "didn't attach fan"}
+{"video_id": "22_u14_r03_m_05", "task": "pc_repair", "indego_label": "didn't attach hard disk"}
+{"video_id": "22_u15_r03_m_01", "task": "pc_repair", "indego_label": "didn't add battery, didn't add ram, attached fan loosely, attached power loosely, left rag"}
+{"video_id": "22_u15_r03_m_02", "task": "pc_repair", "indego_label": "added battery loosely, added ram loosely, attached hard disk loosely, didn't attach fan, didn't attach power, used hands"}
+{"video_id": "22_u15_r03_m_03", "task": "pc_repair", "indego_label": "didn't attach hard disk, didn't close"}
+{"video_id": "22_u16_r03_m_01", "task": "pc_repair", "indego_label": "didn't add battery, didn't add ram, didn't attach hard disk, didn't attach fan, didn't attach power"}
+{"video_id": "22_u16_r03_m_02", "task": "pc_repair", "indego_label": "added battery loosely, added ram loosely, attach hard disk loosely, attached fan loosely, left rag"}
+{"video_id": "22_u16_r03_m_03", "task": "pc_repair", "indego_label": "wrong chip size, attached power loosely, used hands, didn't close"}
+{"video_id": "22_u17_r03_m_01", "task": "pc_repair", "indego_label": "added battery loosely"}
+{"video_id": "22_u17_r03_m_02", "task": "pc_repair", "indego_label": "added ram loosely"}
+{"video_id": "22_u17_r03_m_03", "task": "pc_repair", "indego_label": "didn't add battery, didn't attach hard disk"}
+{"video_id": "22_u17_r03_m_04", "task": "pc_repair", "indego_label": "didn't attach fan"}
+{"video_id": "22_u17_r03_m_05", "task": "pc_repair", "indego_label": "didn't attach power"}
+{"video_id": "07_u01_r02_m_01", "task": "drill_bit", "indego_label": "bit not center"}
+{"video_id": "07_u01_r02_m_02", "task": "drill_bit", "indego_label": "didn't unplug, didn't remove, not possible, not possible, didn't test"}
+{"video_id": "07_u01_r02_m_03", "task": "drill_bit", "indego_label": "didn't unplug, old bit, not possible"}
+{"video_id": "07_u01_r02_m_04", "task": "drill_bit", "indego_label": "bit not center/bit loose/bit wrong way"}
+{"video_id": "07_u02_r03_m_01", "task": "drill_bit", "indego_label": "didn't unplug, not possible"}
+{"video_id": "07_u02_r03_m_02", "task": "drill_bit", "indego_label": "didn't plug in"}
+{"video_id": "07_u02_r03_m_03", "task": "drill_bit", "indego_label": "bit not center"}
+{"video_id": "07_u14_r04_m_01", "task": "drill_bit", "indego_label": "didn't plug in, didn't test"}
+{"video_id": "07_u14_r04_m_02", "task": "drill_bit", "indego_label": "bit not center"}
+{"video_id": "07_u14_r04_m_03", "task": "drill_bit", "indego_label": "didn't unplug, not possible"}
+{"video_id": "07_u14_r04_m_04", "task": "drill_bit", "indego_label": "bit loose"}
+{"video_id": "07_u15_r04_m_01", "task": "drill_bit", "indego_label": "didn't unplug, not possible"}
+{"video_id": "07_u15_r04_m_02", "task": "drill_bit", "indego_label": "bit not center"}
+{"video_id": "07_u15_r04_m_03", "task": "drill_bit", "indego_label": "bit loose"}
+{"video_id": "07_u15_r04_m_04", "task": "drill_bit", "indego_label": "didn't plug in, didn't test"}
+{"video_id": "07_u16_r04_m_01", "task": "drill_bit", "indego_label": "bit not center"}
+{"video_id": "07_u16_r04_m_02", "task": "drill_bit", "indego_label": "didn't unplug, not possible"}
+{"video_id": "07_u16_r04_m_03", "task": "drill_bit", "indego_label": "bit loose, didn't test"}
+{"video_id": "07_u17_r03_m_01", "task": "drill_bit", "indego_label": "didn't unplug, not possible"}
+{"video_id": "07_u17_r03_m_02", "task": "drill_bit", "indego_label": "bit loose"}
+{"video_id": "07_u17_r03_m_03", "task": "drill_bit", "indego_label": "didn't plug in , didn't test"}

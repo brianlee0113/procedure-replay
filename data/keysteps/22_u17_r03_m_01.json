@@ -1,0 +1,47 @@
+[
+ {
+  "step": "open pc",
+  "start": 8.18,
+  "end": 25.36
+ },
+ {
+  "step": "add battery",
+  "start": 39.17,
+  "end": 46.41
+ },
+ {
+  "step": "add ram",
+  "start": 48.91,
+  "end": 75.85
+ },
+ {
+  "step": "attach power",
+  "start": 75.84,
+  "end": 92.04
+ },
+ {
+  "step": "attach hard disk",
+  "start": 93.83,
+  "end": 107.15
+ },
+ {
+  "step": "attach fan",
+  "start": 110.0,
+  "end": 125.87
+ },
+ {
+  "step": "clean",
+  "start": 128.11,
+  "end": 141.4
+ },
+ {
+  "step": "close pc",
+  "start": 141.4,
+  "end": 162.69
+ },
+ {
+  "step": "test",
+  "start": 163.41,
+  "end": 212.37
+ }
+]

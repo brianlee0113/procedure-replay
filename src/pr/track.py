@@ -18,10 +18,11 @@ from pr.license_check import local_path, require_allowed
 TRACKS = RESULTS / "tracks"
 
 
-def prepare(video: str, client: MetaClient, clip: tuple[float, float] | None = None) -> dict:
+def prepare(video: str, client: MetaClient, clip: tuple[float, float] | None = None, audio: bool = True) -> dict:
     """License gate -> optional (start, duration) clip -> 5 fps proxy -> upload.
 
     `video` is a manifest video_id or local path. A clip gets its own id, e.g. `toner_ref__30s+30s`.
+    Without audio the proxy id gets a `__mute` suffix.
     """
     row = require_allowed(video)
     src = local_path(row)
@@ -31,7 +32,9 @@ def prepare(video: str, client: MetaClient, clip: tuple[float, float] | None = N
     if clip:
         vid = f"{vid}__{clip[0]:g}s+{clip[1]:g}s"
         src = trim(src, clip[0], clip[1], PROXY_DIR / f"{vid}_src.mp4")
-    proxy = make_proxy(src, vid)
+    if not audio:
+        vid = f"{vid}__mute"
+    proxy = make_proxy(src, vid, audio=audio)
     return {"row": row, "video_id": vid, "proxy": proxy, "info": probe(proxy),
             "n_frames": proxy_frame_count(proxy), "file_id": client.upload(proxy)}
 

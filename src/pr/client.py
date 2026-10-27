@@ -35,6 +35,8 @@ TOKEN_PRICES = {
     "muse-wonder-1.0": {"input": 4.00, "cached": 0.20, "output": 20.00},
 }
 SAM_PRICE_PER_FRAME = 0.20 / 1000
+# Muse Voice Transcribe: $0.18 per hour of audio, billed in whole seconds.
+TRANSCRIBE_PRICE_PER_HOUR = 0.18
 SAM_MIN_FRAMES = 50
 
 COST_FIELDS = ["ts", "model", "purpose", "video_id", "input_tokens", "cached_tokens",
@@ -71,8 +73,10 @@ def sha256_file(path: Path) -> str:
 
 
 def log_cost(model: str, purpose: str, video_id: str, *, input_tokens=0, cached_tokens=0,
-             output_tokens=0, video_frames=0, latency_s=0.0) -> float:
-    if model in TOKEN_PRICES:
+             output_tokens=0, video_frames=0, latency_s=0.0, audio_seconds=0.0) -> float:
+    if model.startswith("muse-voice-transcribe"):
+        usd = int(audio_seconds) * TRANSCRIBE_PRICE_PER_HOUR / 3600
+    elif model in TOKEN_PRICES:
         p = TOKEN_PRICES[model]
         usd = ((input_tokens - cached_tokens) * p["input"] + cached_tokens * p["cached"]
                + output_tokens * p["output"]) / 1e6
@@ -157,12 +161,14 @@ class MetaClient:
         return text
 
     def spark_json(self, file_id: str, prompt: str, schema: dict, schema_name: str, video_id: str,
-                   purpose: str = "steps") -> dict:
-        """Ask Muse Spark about a video and get JSON constrained to `schema`."""
+                   purpose: str = "steps", model: str | None = None) -> dict:
+        """Ask Muse Spark about a video and get JSON constrained to `schema`. `model` overrides MODEL_NAME."""
+        model = model or self.spark_model
+
         def do():
             t0 = time.time()
             r = self.api.responses.create(
-                model=self.spark_model,
+                model=model,
                 input=[{"type": "message", "role": "user", "content": [
                     {"type": "input_text", "text": prompt},
                     {"type": "input_video", "file_id": file_id},
@@ -176,7 +182,7 @@ class MetaClient:
         r, latency = _retry(do)
         u = r.usage
         cached = (u.input_tokens_details.cached_tokens or 0) if u and u.input_tokens_details else 0
-        log_cost(self.spark_model, purpose, video_id, input_tokens=u.input_tokens if u else 0,
+        log_cost(model, purpose, video_id, input_tokens=u.input_tokens if u else 0,
                  cached_tokens=cached, output_tokens=u.output_tokens if u else 0, latency_s=latency)
         if not r.output_text:
             raise RuntimeError(f"Muse Spark returned no text (status={r.status}, "

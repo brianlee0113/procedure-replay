@@ -63,8 +63,11 @@ def _draw_clock(frame: np.ndarray, seconds: float) -> None:
     cv2.putText(frame, text, (x, y), cv2.FONT_HERSHEY_SIMPLEX, scale, (255, 255, 255), 2, cv2.LINE_AA)
 
 
-def make_proxy(src: Path, video_id: str, force: bool = False) -> Path:
-    """Re-encode to 5 fps, <=720p, H.264 + AAC, faststart, with an MM:SS.s clock in the top-left corner."""
+def make_proxy(src: Path, video_id: str, force: bool = False, audio: bool = True) -> Path:
+    """Re-encode to 5 fps, <=720p, H.264 + AAC, faststart, with an MM:SS.s clock in the top-left corner.
+
+    audio=False leaves the sound out (pass a video_id of its own, so it doesn't share the cached proxy).
+    """
     PROXY_DIR.mkdir(parents=True, exist_ok=True)
     out = PROXY_DIR / f"{video_id}.mp4"
     if out.exists() and not force:
@@ -78,7 +81,7 @@ def make_proxy(src: Path, video_id: str, force: bool = False) -> Path:
          "-f", "rawvideo", "-pix_fmt", "bgr24", "-"], stdout=subprocess.PIPE)
     encode = ["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", f"{w}x{h}",
               "-r", str(PROXY_FPS), "-i", "-"]
-    if info["has_audio"]:
+    if info["has_audio"] and audio:
         encode += ["-i", str(src), "-map", "0:v", "-map", "1:a:0", "-c:a", "aac", "-b:a", "96k", "-shortest"]
     encode += ["-c:v", "libx264", "-crf", "23", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(out)]
     encoder = subprocess.Popen(encode, stdin=subprocess.PIPE)

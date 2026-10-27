@@ -5,6 +5,8 @@
     uv run python scripts/run_eval.py --flags F.json  # score precomputed flags {video_id: [flag, ...]}
     uv run python scripts/run_eval.py --set dev       # dev set (data/ground_truth_dev.jsonl)
     uv run python scripts/run_eval.py --set dev --runs 1,2,3   # three independent reviews per video, + vote
+    uv run python scripts/run_eval.py --set dev --mute --model muse-spark-1.2-contributor --transcripts
+                                                      # experiments: no sound / other model / what was said
 
 Two sets: prompts are tuned on `dev` (flaws injected into other takes); the held-out `test` set is scored to
 report results. Prints detected X/N, false flags Y/M, and a per-video table; writes results/summary[_dev].md.
@@ -27,6 +29,7 @@ from pr.license_check import ROOT, LicenseError, load_manifest, local_path, requ
 from pr.order import keystep_pairs
 from pr.score import incomplete, score_video, summarize
 from pr.steps import CHECKLISTS, extract_steps, load_tasks
+from pr.transcribe import context_block
 
 TARGET_DETECTED, TARGET_FLAWED, TARGET_CLEAN = 5, 6, 2
 
@@ -43,8 +46,10 @@ def load_ground_truth(which: str) -> list[dict]:
 class Pipeline:
     """Runs (or loads from cache) checklist -> Muse Spark trainee report -> judge for one trainee video."""
 
-    def __init__(self, manifest: dict, dry_run: bool, eval_ids: set[str]):
+    def __init__(self, manifest: dict, dry_run: bool, eval_ids: set[str], review: dict | None = None):
         self.manifest, self.dry_run = manifest, dry_run
+        # Experiment options for the review (align): model, mute, transcripts, variant.
+        self.review = review or {}
         # Order rules are learned from correct takes; never from a video under test or its source take.
         self.exclude = eval_ids | {v.split("__")[0] for v in eval_ids}
         self.tasks = load_tasks()
@@ -71,7 +76,10 @@ class Pipeline:
         if checklist is None:
             return None, "no cached checklist"
         client = None if self.dry_run else self.client
-        found = align(video_id, checklist, client, self.tasks[task]["name"], run)
+        r = self.review
+        context = context_block(video_id) if r.get("transcripts") else ""
+        found = align(video_id, checklist, client, self.tasks[task]["name"], run, model=r.get("model"),
+                      mute=r.get("mute", False), context=context, variant=r.get("variant", ""))
         if found is None:
             return None, f"no cached report for run {run}"
         if gaps := unanswered(found, checklist):
@@ -109,14 +117,21 @@ def main() -> int:
     ap.add_argument("--set", choices=list(GROUND_TRUTH), default="test")
     ap.add_argument("--runs", default="1", help="comma-separated run numbers; each is an independent review")
     ap.add_argument("--flags", help="JSON file {video_id: [flags]} to score instead of running the pipeline")
+    ap.add_argument("--model", help="Muse Spark model for the review (default: MODEL_NAME)")
+    ap.add_argument("--mute", action="store_true", help="review the video without its sound")
+    ap.add_argument("--transcripts", action="store_true", help="add what was said (Muse Voice Transcribe) to the prompt")
     args = ap.parse_args()
+    parts = [args.model.removeprefix("muse-spark-") if args.model else "", "mute" if args.mute else "",
+             "tx" if args.transcripts else ""]
+    variant = "_".join(p for p in parts if p)
     runs = [int(r) for r in args.runs.split(",")]
 
     manifest = {r["video_id"]: r for r in load_manifest()}
     given = json.loads(open(args.flags).read()) if args.flags else None
     ground_truth = load_ground_truth(args.set)
     # Exclude both sets' videos from order-rule learning, so the rules are the same for dev and test.
-    pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for w in GROUND_TRUTH for gt in load_ground_truth(w)})
+    pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for w in GROUND_TRUTH for gt in load_ground_truth(w)},
+                    {"model": args.model, "mute": args.mute, "transcripts": args.transcripts, "variant": variant})
     names = ["precomputed"] if given else list(variants({r: [] for r in runs}))
     headline = names[0] if given or len(runs) == 1 else "vote"
     scores: dict[str, list[dict]] = {n: [] for n in names}
@@ -183,7 +198,7 @@ def main() -> int:
     det, ff, extra = line(headline)
     md = [f"# ProcedureReplay evaluation ({args.set} set)", "",
           f"Run {datetime.now().isoformat(timespec='minutes')}, timestamp tolerance ±{args.tol:g}s, "
-          f"review runs {args.runs}, headline: {headline}.", "",
+          f"review runs {args.runs}, variant: {variant or 'default'}, headline: {headline}.", "",
           f"- **{det}**", f"- **{ff}**", f"- {extra}", ""]
     if len(names) > 1:
         md += ["| variant | detected | false flags | extra flags on flawed |", "|---|---|---|---|"]
@@ -198,7 +213,7 @@ def main() -> int:
     md += ["| " + " | ".join(str(r[h]) for h in headers) + " |" for r in rows]
     if skipped:
         md += ["", "Skipped (not scored):", *[f"- `{v}`: {w}" for v, w in skipped]]
-    out = RESULTS / ("summary.md" if args.set == "test" else f"summary_{args.set}.md")
+    out = RESULTS / ("summary" + ("" if args.set == "test" else f"_{args.set}") + (f"_{variant}" if variant else "") + ".md")
     out.write_text("\n".join(md) + "\n")
     print(f"wrote {out.relative_to(ROOT)}")
     return 0

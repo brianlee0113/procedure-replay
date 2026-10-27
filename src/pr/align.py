@@ -90,31 +90,36 @@ def checklist_lines(checklist: dict) -> str:
                      + (f" Done when: {s['done_when']}" if s.get("done_when") else "") for s in checklist["steps"])
 
 
-def align(video: str, checklist: dict, client: MetaClient | None, task_name: str, run: int = 1) -> list[dict] | None:
+def align(video: str, checklist: dict, client: MetaClient | None, task_name: str, run: int = 1,
+          model: str | None = None, mute: bool = False, context: str = "", variant: str = "") -> list[dict] | None:
     """Return one match per checklist step: {index, title, performed, start_s, end_s, confidence, evidence}.
 
     With client=None only a cached report is used (None if there is none). A step the re-check overturned keeps
     its first answer in "first" (see first_pass).
+    Experiments: `model` overrides the Muse Spark model, `mute` sends the video without sound, `context` is
+    extra text appended to both prompts (e.g. what was said), and `variant` names their report folder.
     """
-    cached = REPORTS / f"run{run}" / f"{video}.json"
-    model = client.spark_model if client else spark_model_name()
+    cached = REPORTS / variant / f"run{run}" / f"{video}.json"
+    model = model or (client.spark_model if client else spark_model_name())
     video_hash = sha256_file(local_path(require_allowed(video)))
-    key = hashlib.sha1((PROMPT + RECHECK_PROMPT + checklist_lines(checklist) + model + video_hash)
-                       .encode()).hexdigest()[:12]
+    key = hashlib.sha1((PROMPT + RECHECK_PROMPT + checklist_lines(checklist) + model + video_hash
+                        + ("|mute" if mute else "") + context).encode()).hexdigest()[:12]
     if cached.exists() and json.loads(cached.read_text()).get("key") == key:
         return json.loads(cached.read_text())["steps"]
     if client is None:
         return None
-    p = prepare(video, client)
+    p = prepare(video, client, audio=not mute)
     duration = p["info"]["duration"]
-    prompt = PROMPT.format(task_name=task_name, duration=duration, steps=checklist_lines(checklist))
+    prompt = PROMPT.format(task_name=task_name, duration=duration, steps=checklist_lines(checklist)) + context
     print(f"  Muse Spark ({model}) reviewing {p['video_id']} against {len(checklist['steps'])} steps (run {run})…")
-    report = client.spark_json(p["file_id"], prompt, SCHEMA, "trainee_report", p["video_id"], purpose="review")
+    report = client.spark_json(p["file_id"], prompt, SCHEMA, "trainee_report", p["video_id"], purpose="review",
+                               model=model)
     lines = dict(zip((s["index"] for s in checklist["steps"]), checklist_lines(checklist).splitlines()))
 
     def ask_one(index: int) -> dict | None:
-        prompt = RECHECK_PROMPT.format(task_name=task_name, duration=duration, step=lines[index], index=index)
-        again = client.spark_json(p["file_id"], prompt, SCHEMA, "trainee_report", p["video_id"], purpose="recheck")
+        prompt = RECHECK_PROMPT.format(task_name=task_name, duration=duration, step=lines[index], index=index) + context
+        again = client.spark_json(p["file_id"], prompt, SCHEMA, "trainee_report", p["video_id"], purpose="recheck",
+                                  model=model)
         return next((x for x in again["steps"] if x["index"] == index), None)
 
     # The schema can't force one answer per step: drop unknown and repeated indices, ask for any step left out.

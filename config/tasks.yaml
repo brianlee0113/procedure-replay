@@ -2,9 +2,12 @@
 # SAM 3.1 takes ONE short noun phrase per request (no lists, commands, or questions),
 # so each prompt costs one request per video (billed per frame of the 5 fps proxy).
 #
-# Footage: IndEgo (Fraunhofer IPK, NeurIPS 2025), recorded on Project Aria glasses, CC BY 4.0.
-# https://huggingface.co/datasets/FraunhoferIPK/IndEgo  — Mistake_Detection/Task_<N>/mp4_480/
-# `keysteps` are IndEgo's human keystep labels, in the correct order.
+# Footage (see README "Data"):
+# - factory: IndEgo (Fraunhofer IPK, NeurIPS 2025), Project Aria glasses, CC BY 4.0.
+#   https://huggingface.co/datasets/FraunhoferIPK/IndEgo  — Mistake_Detection/Task_<N>/mp4_480/
+# - home: CaptainCook4D (UT Dallas, NeurIPS 2024), head-mounted GoPro, Apache-2.0.
+#   https://github.com/CaptainCook4D  — recipes have a partial order (data/task_graphs/<task>.json).
+# `keysteps` are the dataset's human step labels, in the order the reference take does them.
 # `reference` is the correct take used to build the Guide; every other take is a trainee.
 
 pc_repair:
@@ -31,6 +34,35 @@ drill_bit:
     - electric drill
     - drill bit
     - power plug
+
+home_cooking:
+  name: Herb omelet with fried tomatoes (home kitchen)
+  captaincook_activity: Herb Omelet with Fried Tomatoes
+  reference: cc4d_22_8               # ~10 min, normal take
+  expected_steps: 15
+  keysteps:
+    - chop 2 tbsp cilantro
+    - heat 1 tbsp oil in a non-stick frying pan
+    - add 1/2 tsp ground black pepper to the bowl
+    - take a tomato
+    - add the chopped cilantro to the bowl
+    - crack one egg in a bowl
+    - cut tomato into two pieces
+    - beat the contents of the bowl
+    - cook the tomatoes cut-side down until they start to soften and colour
+    - scoop the tomatoes from the pan
+    - put tomatoes on a serving plate
+    - pour the egg mixture into the pan
+    - stir gently with a wooden spoon so the egg that sets on the base of the pan moves to enable the uncooked egg to flow into the space
+    - stop stirring when it's nearly cooked to allow it to set into an omelette
+    - transfer omelette to the plate and serve with the tomatoes
+  object_prompts:
+    - frying pan
+    - tomato
+    - egg
+    - mixing bowl
+    - wooden spoon
+    - plate
 
 # Not used for evaluation: correct takes revisit steps (vertical bar -> holder bar -> vertical bar),
 # which would read as out-of-order. Kept so it can be switched back on.

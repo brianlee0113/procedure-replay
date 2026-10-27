@@ -1,7 +1,8 @@
 """Manifest access + license gate. Every entry point calls require_allowed() before touching a video.
 
-Allowed: CC0, CC-BY, CC-BY-SA (any version suffix, e.g. CC-BY-4.0), Pexels license, Pixabay license.
+Allowed: CC0, CC-BY, CC-BY-SA (any version suffix, e.g. CC-BY-4.0), Pexels license, Pixabay license, Apache-2.0.
 Rejected: anything with ND (we edit videos) or NC, and rows missing creator / source_url.
+Why this list: docs/HACKATHON_RULES.md ("Project policy").
 
     uv run python -m pr.license_check            # validate every manifest row, exit 1 on any failure
 """
@@ -15,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "data" / "manifest.csv"
 FIELDS = ["video_id", "task", "creator", "source_url", "license", "role", "local_path"]
 
-_ALLOWED = re.compile(r"^(CC0|CC-BY|CC-BY-SA)(-\d+(\.\d+)?)?$|^(PEXELS|PIXABAY)(-LICENSE)?$")
+_ALLOWED = re.compile(r"^(CC0|CC-BY|CC-BY-SA)(-\d+(\.\d+)?)?$|^(PEXELS|PIXABAY)(-LICENSE)?$|^APACHE-2\.0$")
 
 
 class LicenseError(Exception):

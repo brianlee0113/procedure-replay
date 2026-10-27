@@ -6,8 +6,9 @@
     uv run python -m pr.inject swap --video ID --a 20,35 --b 50,70 --steps 2,4
     uv run python -m pr.inject none --video ID          # register an unedited trainee video
 
---step looks the range up in data/keysteps/<video_id>.json (written by scripts/import_indego.py) and the
-step number in the task's `keysteps` list in config/tasks.yaml.
+--step looks the range up in data/keysteps/<video_id>.json (written by scripts/import_indego.py or
+scripts/import_captaincook.py) and the step number in the task's `keysteps` list in config/tasks.yaml.
+A unique prefix of a step name works. For recipes, swap refuses two steps the recipe lets you do in either order.
 
 Each edit writes data/edited/<new_id>.mp4 and appends:
 - a manifest row (same creator / source / license as the source video, role trainee),
@@ -59,11 +60,35 @@ def step_list(task: str) -> list[str]:
     return [s["title"] for s in json.loads(path.read_text())["steps"]] if path.exists() else []
 
 
+def resolve_step(task: str, name: str) -> str:
+    """Full step name from an exact name or a unique prefix ('cook the tomatoes' for a long recipe step)."""
+    steps = step_list(task)
+    if name in steps:
+        return name
+    hits = [s for s in steps if s.lower().startswith(name.lower())]
+    if len(hits) != 1:
+        raise SystemExit(f"refused: {name!r} matches {len(hits)} steps of {task}: {hits or steps}")
+    return hits[0]
+
+
+def check_swap_is_an_error(task: str, a: str, b: str) -> None:
+    """Recipes are partial orders: swapping two steps the recipe doesn't order is not a mistake, so refuse it."""
+    path = ROOT / "data" / "task_graphs" / f"{task}.json"
+    if not path.exists():
+        return
+    before = {tuple(p) for p in json.loads(path.read_text())["before"]}
+    if (a, b) not in before and (b, a) not in before:
+        raise SystemExit(f"refused: {task}'s recipe allows {a!r} and {b!r} in either order "
+                         f"({path.relative_to(ROOT)}), so swapping them is not an error")
+
+
 def keystep_range(video_id: str, task: str, name: str) -> tuple[float, float, int]:
     """(start, end, 1-based step number) of a labelled keystep in the source video."""
     path = ROOT / "data" / "keysteps" / f"{video_id}.json"
     if not path.exists():
-        raise SystemExit(f"refused: no keystep labels at {path.relative_to(ROOT)} (run scripts/import_indego.py)")
+        raise SystemExit(f"refused: no keystep labels at {path.relative_to(ROOT)} "
+                         f"(run scripts/import_indego.py or scripts/import_captaincook.py)")
+    name = resolve_step(task, name)
     segs = [s for s in json.loads(path.read_text()) if s["step"] == name]
     steps = step_list(task)
     if not segs or name not in steps:
@@ -126,6 +151,7 @@ def main(argv: list[str] | None = None) -> int:
         args.start, args.end, n = keystep_range(vid, row["task"], args.step)
         args.steps = args.steps or str(n)
     if args.cmd == "swap" and args.step_a and args.step_b:
+        check_swap_is_an_error(row["task"], resolve_step(row["task"], args.step_a), resolve_step(row["task"], args.step_b))
         sa, ea, na = keystep_range(vid, row["task"], args.step_a)
         sb, eb, nb = keystep_range(vid, row["task"], args.step_b)
         args.a, args.b, args.steps = (sa, ea), (sb, eb), args.steps or f"{na},{nb}"

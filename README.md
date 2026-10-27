@@ -40,10 +40,17 @@ uv run python -m pr.license_check
 
 ## Data
 
-Footage: [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo) (Fraunhofer IPK, NeurIPS 2025), first-person
-industrial tasks recorded on **Project Aria glasses**, **CC BY 4.0**. Each task was done by 6 people, in correct (`_c_`)
-and mistake (`_m_`) takes, with human keystep labels. We use Task 22 (repairing a PC, 9 steps) and Task 7
-(changing a drill bit, 5 steps); see `config/tasks.yaml`.
+Two first-person scenarios, so the same pipeline covers a factory floor and a home kitchen:
+
+| Scenario | Dataset | Camera | License | Tasks (`config/tasks.yaml`) |
+| --- | --- | --- | --- | --- |
+| Factory | [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo) (Fraunhofer IPK, NeurIPS 2025) | Project Aria glasses | CC BY 4.0 | `pc_repair` (Task 22, 9 steps), `drill_bit` (Task 7, 5 steps) |
+| Home | [CaptainCook4D](https://captaincook4d.github.io/captain-cook/) (UT Dallas, NeurIPS 2024) | head-mounted GoPro | Apache-2.0 | `home_cooking` (herb omelet with fried tomatoes, 15 steps) |
+
+Both come with human step labels and real mistake takes. IndEgo takes are correct (`_c_`) or mistake (`_m_`);
+CaptainCook4D takes are normal or error. Recipes are partial orders (you can chop the cilantro before or after
+taking the tomato), so `import_captaincook.py` also writes the recipe graph to `data/task_graphs/`, and
+`inject.py swap` refuses to swap two steps the recipe allows in either order.
 
 Videos never go in git. Download only the 480p videos and annotations (~0.9 GB; the full dataset is ~19 TB):
 
@@ -58,9 +65,19 @@ uvx --from huggingface_hub hf download FraunhoferIPK/IndEgo --repo-type dataset 
 uv run python scripts/import_indego.py --drop-examples   # manifest, ATTRIBUTION, data/keysteps/, real-mistake labels
 ```
 
+CaptainCook4D: clone the two small repos (labels + download links), print the curl lines for the 17 omelet
+recordings (GoPro 360p, ~80 MB each), run them, then import:
+
+```bash
+git clone --depth 1 https://github.com/CaptainCook4D/annotations data/raw/captaincook4d/annotations
+git clone --depth 1 https://github.com/CaptainCook4D/downloader  data/raw/captaincook4d/downloader
+uv run python scripts/import_captaincook.py --print-downloads > /tmp/cc4d_download.sh   # review, then: sh /tmp/cc4d_download.sh
+uv run python scripts/import_captaincook.py   # manifest, ATTRIBUTION, data/keysteps/, data/task_graphs/, real-error labels
+```
+
 Every video is listed in `data/manifest.csv` (video_id, task, creator, source_url, license, role, local_path) and
 `ATTRIBUTION.md`. Every script refuses a video whose manifest row lacks an allowed license (CC0, CC-BY, CC-BY-SA,
-Pexels, Pixabay).
+Pexels, Pixabay, Apache-2.0; never ND or NC). Why that list: [docs/HACKATHON_RULES.md](docs/HACKATHON_RULES.md).
 
 `data/ground_truth.jsonl` has one row per trainee video. `injected_flaw.type` is `none`, `cut`, or `swap`;
 `steps` are 1-based step numbers from `step_list`; `start_ts`/`end_ts` are seconds in the **edited** video
@@ -92,13 +109,14 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 
 | Component | What it does | Status |
 | --- | --- | --- |
-| `src/pr/license_check.py` | Manifest access + license gate (CC0/CC-BY/CC-BY-SA/Pexels/Pixabay only) | day 1 |
+| `src/pr/license_check.py` | Manifest access + license gate (CC0/CC-BY/CC-BY-SA/Pexels/Pixabay/Apache-2.0 only) | day 1 |
 | `src/pr/client.py` | Meta Model API wrapper: file upload, SAM 3.1 streaming, Muse Spark structured output, retries, cost log | day 1 |
 | `src/pr/frames.py` | ffprobe, 5 fps proxy with burned-in clock, trimming, frame grabs | day 1 |
 | `src/pr/track.py` | SAM output → per-object presence timeline | day 1 |
 | `src/pr/steps.py` | Muse Spark → checklist JSON with timestamps and reference frames | day 1 |
-| `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name, ground truth + attribution logging | day 1 |
+| `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name, ground truth + attribution logging; refuses swaps a recipe allows | day 1 |
 | `scripts/import_indego.py` | Registers downloaded IndEgo videos: manifest, attribution, keystep labels, real-mistake labels | day 1 |
+| `scripts/import_captaincook.py` | Prints CaptainCook4D download commands; registers videos, step labels, recipe graph, real-error labels | day 1 |
 | `src/pr/align.py`, `src/pr/judge.py` | Align trainee timeline to checklist; flag missing / out-of-order | stub |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
@@ -123,8 +141,10 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 **Models** (via [Meta Model API](https://dev.meta.ai/docs)): Muse Spark 1.3 (`muse-spark-1.3-contributor`), SAM 3.1 (`sam-3.1`).
 
 **Videos**: [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo), Fraunhofer IPK (Chavan et al., NeurIPS 2025),
-CC BY 4.0, recorded on Project Aria glasses. Keystep and mistake labels are IndEgo's. Per-video list and our edits:
-[ATTRIBUTION.md](ATTRIBUTION.md).
+CC BY 4.0, recorded on Project Aria glasses. Keystep and mistake labels are IndEgo's.
+[CaptainCook4D](https://captaincook4d.github.io/captain-cook/), Peddi et al. (NeurIPS 2024 Datasets & Benchmarks),
+Apache-2.0 videos; step, error and task-graph labels from [CaptainCook4D/annotations](https://github.com/CaptainCook4D/annotations) (MIT).
+Per-video list and our edits: [ATTRIBUTION.md](ATTRIBUTION.md).
 
 ## License
 

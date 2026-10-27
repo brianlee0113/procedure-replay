@@ -94,6 +94,8 @@ def main() -> int:
     entries, new_mistakes = [], []
 
     for key, cfg in tasks.items():
+        if "indego_task" not in cfg:
+            continue
         n = cfg["indego_task"]
         task_dir = root / f"Task_{n}"
         videos = sorted((task_dir / "mp4_480").glob("*.mp4")) or sorted((task_dir / "mp4").glob("*.mp4"))

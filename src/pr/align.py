@@ -91,14 +91,18 @@ def checklist_lines(checklist: dict) -> str:
 
 
 def align(video: str, checklist: dict, client: MetaClient | None, task_name: str, run: int = 1,
-          model: str | None = None, mute: bool = False, context: str = "", variant: str = "") -> list[dict] | None:
+          model: str | None = None, mute: bool = True, context: str = "", variant: str = "") -> list[dict] | None:
     """Return one match per checklist step: {index, title, performed, start_s, end_s, confidence, evidence}.
 
     With client=None only a cached report is used (None if there is none). A step the re-check overturned keeps
     its first answer in "first" (see first_pass).
-    Experiments: `model` overrides the Muse Spark model, `mute` sends the video without sound, `context` is
-    extra text appended to both prompts (e.g. what was said), and `variant` names their report folder.
+    The video is sent without its sound by default: Muse Spark 1.3 does not fully support audio, and on the dev
+    set the muted review found more flaws (5.3 vs 4.0 of 9 over 3 runs) with no more false flags
+    (results/summary_dev_audio.md).
+    Experiments: `model` overrides the Muse Spark model, `mute=False` sends the sound too, `context` is extra
+    text appended to both prompts (e.g. what was said), and `variant` names their report folder.
     """
+    variant = variant or ("mute" if mute else "")
     cached = REPORTS / variant / f"run{run}" / f"{video}.json"
     model = model or (client.spark_model if client else spark_model_name())
     video_hash = sha256_file(local_path(require_allowed(video)))

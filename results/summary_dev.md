@@ -1,6 +1,6 @@
 # ProcedureReplay evaluation (dev set)
 
-Run 2026-10-27T08:45, timestamp tolerance ±5s, review runs 1,2,3, headline: vote.
+Run 2026-10-27T10:02, timestamp tolerance ±5s, review runs 1,2,3, variant: default, headline: vote.
 
 - **Detected 4/9  (target ≥5/6)**
 - **False flags 0/2  (target 0/2)**

@@ -23,6 +23,10 @@ evaluation: edited videos with a known injected flaw (cut or swap) ─► detect
 
 - **Muse Spark 1.3** (Meta Model API, Responses API + JSON-schema structured output) writes the checklist
   from the reference video and decides, for the trainee video, which steps were done and when.
+- The review sends the trainee video **without its sound**. Meta's docs say audio understanding in Muse Spark 1.3
+  is not fully supported, and on the dev set the muted review found more flaws (5.3 vs 4.0 of 9, mean of 3 runs)
+  with no more false flags. Muse Voice Transcribe found no speech in the dataset videos, so there was no
+  narration to add ([results/summary_dev_audio.md](results/summary_dev_audio.md)).
 - **SAM 3.1** (Meta Model API) is *not* part of the decision: smoke tests showed it can't see small parts
   (RAM, coin battery) on 480p glasses footage. It is used for evidence visuals (object masks) only.
 - Videos are re-encoded to a 5 fps 720p proxy with a burned-in clock, so frame index ↔ seconds is exact
@@ -102,6 +106,7 @@ uv run python -m pr.inject none --video 22_u16_r03_c_01
 uv run python scripts/run_eval.py               # held-out test set: data/ground_truth.jsonl
 uv run python scripts/run_eval.py --set dev     # dev set: data/ground_truth_dev.jsonl
 uv run python scripts/run_eval.py --set dev --runs 1,2,3   # 3 independent reviews per video + majority vote
+uv run python scripts/run_eval.py --set dev --with-audio      # experiment: review with the sound (old default)
 uv run python tests/test_score.py && uv run python tests/test_judge.py && uv run python tests/test_vote.py
 ```
 

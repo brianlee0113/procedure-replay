@@ -5,8 +5,8 @@
     uv run python scripts/run_eval.py --flags F.json  # score precomputed flags {video_id: [flag, ...]}
     uv run python scripts/run_eval.py --set dev       # dev set (data/ground_truth_dev.jsonl)
     uv run python scripts/run_eval.py --set dev --runs 1,2,3   # three independent reviews per video, + vote
-    uv run python scripts/run_eval.py --set dev --mute --model muse-spark-1.2-contributor --transcripts
-                                                      # experiments: no sound / other model / what was said
+    uv run python scripts/run_eval.py --set dev --with-audio --model muse-spark-1.2-contributor --transcripts
+                                                      # experiments: with sound / other model / what was said
 
 Two sets: prompts are tuned on `dev` (flaws injected into other takes); the held-out `test` set is scored to
 report results. Prints detected X/N, false flags Y/M, and a per-video table; writes results/summary[_dev].md.
@@ -79,7 +79,7 @@ class Pipeline:
         r = self.review
         context = context_block(video_id) if r.get("transcripts") else ""
         found = align(video_id, checklist, client, self.tasks[task]["name"], run, model=r.get("model"),
-                      mute=r.get("mute", False), context=context, variant=r.get("variant", ""))
+                      mute=r.get("mute", True), context=context, variant=r.get("variant", ""))
         if found is None:
             return None, f"no cached report for run {run}"
         if gaps := unanswered(found, checklist):
@@ -118,10 +118,10 @@ def main() -> int:
     ap.add_argument("--runs", default="1", help="comma-separated run numbers; each is an independent review")
     ap.add_argument("--flags", help="JSON file {video_id: [flags]} to score instead of running the pipeline")
     ap.add_argument("--model", help="Muse Spark model for the review (default: MODEL_NAME)")
-    ap.add_argument("--mute", action="store_true", help="review the video without its sound")
+    ap.add_argument("--with-audio", action="store_true", help="review the video with its sound (default: muted)")
     ap.add_argument("--transcripts", action="store_true", help="add what was said (Muse Voice Transcribe) to the prompt")
     args = ap.parse_args()
-    parts = [args.model.removeprefix("muse-spark-") if args.model else "", "mute" if args.mute else "",
+    parts = [args.model.removeprefix("muse-spark-") if args.model else "", "" if args.with_audio else "mute",
              "tx" if args.transcripts else ""]
     variant = "_".join(p for p in parts if p)
     runs = [int(r) for r in args.runs.split(",")]
@@ -131,7 +131,7 @@ def main() -> int:
     ground_truth = load_ground_truth(args.set)
     # Exclude both sets' videos from order-rule learning, so the rules are the same for dev and test.
     pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for w in GROUND_TRUTH for gt in load_ground_truth(w)},
-                    {"model": args.model, "mute": args.mute, "transcripts": args.transcripts, "variant": variant})
+                    {"model": args.model, "mute": not args.with_audio, "transcripts": args.transcripts, "variant": variant})
     names = ["precomputed"] if given else list(variants({r: [] for r in runs}))
     headline = names[0] if given or len(runs) == 1 else "vote"
     scores: dict[str, list[dict]] = {n: [] for n in names}

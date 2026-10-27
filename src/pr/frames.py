@@ -15,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[2]
 PROXY_DIR = ROOT / "data" / "proxy"
 PROXY_FPS = 5
 PROXY_HEIGHT = 720
+# The Files API answered "400 Invalid upload request" for a 128.1 MiB proxy and accepted 123.4 MiB,
+# so long proxies are re-encoded below this size.
+MAX_UPLOAD_BYTES = 120 * 2**20
 
 
 def run(cmd: list[str]) -> str:
@@ -91,6 +94,13 @@ def make_proxy(src: Path, video_id: str, force: bool = False) -> Path:
     if decoder.wait() != 0 or encoder.wait() != 0:
         out.unlink(missing_ok=True)
         raise RuntimeError(f"proxy encode failed for {src}")
+    crf = 23
+    while out.stat().st_size > MAX_UPLOAD_BYTES and crf < 35:
+        crf += 3
+        smaller = out.with_suffix(".tmp.mp4")
+        run(["ffmpeg", "-v", "error", "-y", "-i", str(out), "-c:v", "libx264", "-crf", str(crf), "-c:a", "copy",
+             "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(smaller)])
+        smaller.replace(out)
     return out
 
 

@@ -34,6 +34,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u01_r07_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_c_02_480.mp4
 - Edits:
+  - 2026-10-27: cut 97.2–112.8 s (removes step 2: add battery) → `22_u01_r07_c_02__cut_97.2-112.8`
 
 ### 22_u01_r07_c_03
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u01, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u01_r07_c_03_480.mp4
@@ -140,6 +141,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u15_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_02_480.mp4
 - Edits:
+  - 2026-10-27: cut 72.5–81.9 s (removes step 5: attach fan) → `22_u15_r03_c_02__cut_72.5-81.9`
 
 ### 22_u15_r03_c_03
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_03_480.mp4
@@ -165,6 +167,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u16_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_02_480.mp4
 - Edits:
+  - 2026-10-27: cut 54.8–68.2 s (removes step 6: attach power) → `22_u16_r03_c_02__cut_54.8-68.2`
 
 ### 22_u16_r03_c_03
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_03_480.mp4
@@ -189,6 +192,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u17_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_c_02_480.mp4
 - Edits:
+  - 2026-10-27: swapped 252.4–308.3 s with 308.5–371.2 s (steps 8,9 out of order) → `22_u17_r03_c_02__swap_252.4-308.3_308.5-371.2`
 
 ### 22_u17_r03_c_03
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u17, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u17_r03_c_03_480.mp4
@@ -249,6 +253,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 07_u02_r03_c_01
 - IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_01_480.mp4
 - Edits:
+  - 2026-10-27: cut 2.7–14.9 s (removes step 1: unplug) → `07_u02_r03_c_01__cut_2.7-14.9`
 
 ### 07_u02_r03_c_02
 - IndEgo Task 7 (Changing a drill bit), participant u02, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u02_r03_c_02_480.mp4
@@ -314,6 +319,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 07_u15_r04_c_01
 - IndEgo Task 7 (Changing a drill bit), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_c_01_480.mp4
 - Edits:
+  - 2026-10-27: cut 5.8–15.6 s (removes step 2: remove bit) → `07_u15_r04_c_01__cut_5.8-15.6`
 
 ### 07_u15_r04_c_02
 - IndEgo Task 7 (Changing a drill bit), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u15_r04_c_02_480.mp4
@@ -342,6 +348,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 07_u16_r04_c_01
 - IndEgo Task 7 (Changing a drill bit), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_c_01_480.mp4
 - Edits:
+  - 2026-10-27: swapped 21.7–36.5 s with 42.4–45.4 s (steps 3,4 out of order) → `07_u16_r04_c_01__swap_21.7-36.5_42.4-45.4`
 
 ### 07_u16_r04_c_02
 - IndEgo Task 7 (Changing a drill bit), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u16_r04_c_02_480.mp4
@@ -427,6 +434,8 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### cc4d_22_24
 - CaptainCook4D recording 22_24 (Herb Omelet with Fried Tomatoes), person 1, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/5l7kc8wiwylq1s2xatbwab1r3exutbzl.mp4
 - Edits:
+  - 2026-10-27: swapped 1506.6–1529.2 s with 1536.6–1572.9 s (steps 10,12 out of order) → `cc4d_22_24__swap_1506.6-1529.2_1536.6-1572.9`
+  - 2026-10-27: cut 380.9–451.7 s (removes step 6: add 1/2 tsp ground black pepper to the bowl) → `cc4d_22_24__cut_380.9-451.7`
 
 ### cc4d_22_26
 - CaptainCook4D recording 22_26 (Herb Omelet with Fried Tomatoes), person 6, error take · Apache-2.0 · https://utdallas.box.com/shared/static/vd1rcv6nhc9rhqvvpvtyraxz78s60pyd.mp4

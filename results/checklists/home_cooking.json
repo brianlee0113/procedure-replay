@@ -1,184 +1,216 @@
 {
   "steps": [
     {
-      "description": "Hands hold the tomato under running water in the sink, rubbing and rinsing it clean.",
-      "end_s": 30.0,
+      "description": "The hands retrieve a tomato from the refrigerator, remove its sticker, rinse it, and set it on the counter.",
+      "done_when": "a clean whole tomato is ready on the work surface",
+      "end_s": 36.0,
       "index": 1,
       "key_objects": [
         "tomato"
       ],
-      "start_s": 23.0,
-      "title": "Wash the tomato",
+      "start_s": 5.0,
+      "title": "Take a tomato",
+      "keystep": "take a tomato",
       "reference_frame": "results/checklists/home_cooking_step01.jpg"
     },
     {
-      "description": "Hands strip leaves from stems and chop the fresh green herbs finely on the cutting board.",
-      "end_s": 122.0,
+      "description": "The hands strip cilantro leaves onto a white board and chop them finely then portion them with a measuring spoon.",
+      "done_when": "finely chopped cilantro is portioned and ready to add",
+      "end_s": 157.0,
       "index": 2,
-      "key_objects": [],
-      "start_s": 71.0,
-      "title": "Chop the fresh herbs",
+      "key_objects": [
+        "cutting board"
+      ],
+      "start_s": 50.0,
+      "title": "Chop the cilantro",
+      "keystep": "chop 2 tbsp cilantro",
       "reference_frame": "results/checklists/home_cooking_step02.jpg"
     },
     {
-      "description": "Hands crack a white egg and drop its contents into the small blue mixing bowl.",
+      "description": "The hands place a small blue bowl on the board, fetch an egg, crack it, and drop it into the bowl.",
+      "done_when": "one cracked raw egg is contained in the bowl",
       "end_s": 190.0,
       "index": 3,
       "key_objects": [
         "egg",
-        "mixing bowl"
+        "bowl"
       ],
-      "start_s": 185.0,
-      "title": "Crack the egg into bowl",
+      "start_s": 171.0,
+      "title": "Crack an egg into bowl",
+      "keystep": "crack one egg in a bowl",
       "reference_frame": "results/checklists/home_cooking_step03.jpg"
     },
     {
-      "description": "Hands steady the washed tomato and cut it in half with a knife on the cutting board.",
-      "end_s": 214.0,
+      "description": "The hands hold the washed tomato steady on the board and slice it through the middle with a knife.",
+      "done_when": "the tomato is divided into two halves",
+      "end_s": 213.5,
       "index": 4,
       "key_objects": [
-        "tomato"
+        "tomato",
+        "cutting board"
       ],
-      "start_s": 210.0,
+      "start_s": 209.0,
       "title": "Halve the tomato",
+      "keystep": "cut tomato into two pieces",
       "reference_frame": "results/checklists/home_cooking_step04.jpg"
     },
     {
-      "description": "Hands transfer chopped herbs into the bowl with the egg and add measured black pepper.",
-      "end_s": 269.0,
+      "description": "The hands gather the chopped cilantro from the board and drop it into the bowl with the egg.",
+      "done_when": "the herbs are combined with the egg in the bowl",
+      "end_s": 243.0,
       "index": 5,
       "key_objects": [
-        "egg",
-        "mixing bowl"
+        "bowl"
       ],
-      "start_s": 237.0,
-      "title": "Combine herbs and seasoning with egg",
+      "start_s": 235.0,
+      "title": "Add cilantro to egg",
+      "keystep": "add the chopped cilantro to the bowl",
       "reference_frame": "results/checklists/home_cooking_step05.jpg"
     },
     {
-      "description": "Hands whisk the egg, herbs, and seasoning together in the blue bowl using a fork.",
-      "end_s": 313.0,
+      "description": "The hands measure ground black pepper and sprinkle it into the bowl containing egg and herbs.",
+      "done_when": "seasoning is added to the egg mixture",
+      "end_s": 272.0,
       "index": 6,
       "key_objects": [
         "egg",
-        "mixing bowl"
+        "bowl"
       ],
-      "start_s": 293.0,
-      "title": "Whisk the herb egg mixture",
+      "start_s": 248.0,
+      "title": "Season with black pepper",
+      "keystep": "add 1/2 tsp ground black pepper to the bowl",
       "reference_frame": "results/checklists/home_cooking_step06.jpg"
     },
     {
-      "description": "Hands measure oil and pour it into the small frying pan on the stove.",
-      "end_s": 373.0,
+      "description": "The hands hold the bowl and whisk the egg, herbs, and pepper together with a fork.",
+      "done_when": "the contents are uniform and beaten ready for cooking",
+      "end_s": 314.0,
       "index": 7,
       "key_objects": [
-        "frying pan"
+        "egg",
+        "bowl"
       ],
-      "start_s": 365.0,
-      "title": "Add oil to the frying pan",
+      "start_s": 285.0,
+      "title": "Beat the mixture",
+      "keystep": "beat the contents of the bowl",
       "reference_frame": "results/checklists/home_cooking_step07.jpg"
     },
     {
-      "description": "Hands tilt and swirl the frying pan to coat it with hot oil and check the heat.",
-      "end_s": 400.0,
+      "description": "The hands measure oil into a small non-stick pan, place it on the burner, turn on heat, and swirl to coat.",
+      "done_when": "oil is hot and evenly coating the pan for frying",
+      "end_s": 402.0,
       "index": 8,
       "key_objects": [
         "frying pan"
       ],
-      "start_s": 379.0,
-      "title": "Heat and coat the pan",
+      "start_s": 363.0,
+      "title": "Heat oil in pan",
+      "keystep": "heat 1 tbsp oil in a non-stick frying pan",
       "reference_frame": "results/checklists/home_cooking_step08.jpg"
     },
     {
-      "description": "Hands place the two tomato halves cut-side down into the hot oiled frying pan.",
-      "end_s": 423.0,
+      "description": "The hands lay both tomato halves cut-side down in the hot oil and leave them to sizzle, checking until softened and colored.",
+      "done_when": "tomatoes are softened and colored on the cut side",
+      "end_s": 500.0,
       "index": 9,
       "key_objects": [
-        "tomato",
-        "frying pan"
+        "frying pan",
+        "tomato"
       ],
       "start_s": 414.0,
-      "title": "Place tomatoes in the pan",
+      "title": "Fry tomato halves",
+      "keystep": "cook the tomatoes cut-side down until they start to soften and colour",
       "reference_frame": "results/checklists/home_cooking_step09.jpg"
     },
     {
-      "description": "Hands retrieve a white plate and wipe it clean with a paper towel.",
-      "end_s": 437.0,
+      "description": "The hands slide utensils under the softened tomatoes and lift them free from the pan surface.",
+      "done_when": "tomatoes are freed and lifted from the cooking surface",
+      "end_s": 589.0,
       "index": 10,
       "key_objects": [
-        "plate"
+        "frying pan",
+        "tomato"
       ],
-      "start_s": 428.0,
-      "title": "Prepare the serving plate",
+      "start_s": 523.0,
+      "title": "Scoop tomatoes out",
+      "keystep": "scoop the tomatoes from the pan",
       "reference_frame": "results/checklists/home_cooking_step10.jpg"
     },
     {
-      "description": "Hands turn, press, and tend the tomatoes in the frying pan with spatula and fork as they fry.",
-      "end_s": 587.0,
+      "description": "The hands transfer the cooked tomato halves onto a white serving plate.",
+      "done_when": "cooked tomatoes are resting on the serving plate",
+      "end_s": 596.0,
       "index": 11,
       "key_objects": [
         "tomato",
-        "frying pan",
-        "wooden spoon"
+        "plate"
       ],
-      "start_s": 524.0,
-      "title": "Fry and turn the tomatoes",
+      "start_s": 589.0,
+      "title": "Plate the tomatoes",
+      "keystep": "put tomatoes on a serving plate",
       "reference_frame": "results/checklists/home_cooking_step11.jpg"
     },
     {
-      "description": "Hands lift the fried tomato halves from the pan and set them onto the plate.",
-      "end_s": 596.0,
+      "description": "The hands lift the blue bowl and pour the beaten herb-egg mixture into the hot oiled pan.",
+      "done_when": "all liquid egg mixture is in the pan to cook",
+      "end_s": 619.5,
       "index": 12,
       "key_objects": [
-        "tomato",
-        "frying pan",
-        "plate"
+        "egg",
+        "bowl",
+        "frying pan"
       ],
-      "start_s": 588.0,
-      "title": "Transfer fried tomatoes to plate",
+      "start_s": 612.0,
+      "title": "Pour egg into pan",
+      "keystep": "pour the egg mixture into the pan",
       "reference_frame": "results/checklists/home_cooking_step12.jpg"
     },
     {
-      "description": "Hands pour the whisked herb egg mixture from the blue bowl into the hot frying pan.",
-      "end_s": 619.0,
+      "description": "The hands gently push and stir the setting egg in the pan to let uncooked liquid flow to the base.",
+      "done_when": "set and liquid egg are redistributed for even cooking",
+      "end_s": 645.0,
       "index": 13,
       "key_objects": [
-        "egg",
-        "mixing bowl",
-        "frying pan"
+        "frying pan",
+        "wooden spoon",
+        "egg"
       ],
-      "start_s": 614.0,
-      "title": "Pour egg mixture into pan",
+      "start_s": 622.0,
+      "title": "Stir egg gently",
+      "keystep": "stir gently with a wooden spoon so the egg that sets on the base of the pan moves to enable the uncooked egg to flow into the space",
       "reference_frame": "results/checklists/home_cooking_step13.jpg"
     },
     {
-      "description": "Hands stir, shape, and cook the herb egg mixture in the pan until set as an omelet.",
-      "end_s": 693.0,
+      "description": "The hands stop stirring and leave the nearly-set egg undisturbed to firm into a round shape.",
+      "done_when": "the egg is set as a cohesive omelette",
+      "end_s": 677.0,
       "index": 14,
       "key_objects": [
-        "egg",
         "frying pan",
-        "wooden spoon"
+        "egg"
       ],
-      "start_s": 623.0,
-      "title": "Cook the herb omelet",
+      "start_s": 646.0,
+      "title": "Let omelette set",
+      "keystep": "stop stirring when it's nearly cooked to allow it to set into an omelette",
       "reference_frame": "results/checklists/home_cooking_step14.jpg"
     },
     {
-      "description": "Hands slide the cooked herb omelet from the frying pan onto the plate beside the tomatoes.",
-      "end_s": 699.0,
+      "description": "The hands slide the cooked herb omelette from the pan onto the plate alongside the fried tomatoes.",
+      "done_when": "omelette and tomatoes are plated together ready to serve",
+      "end_s": 703.0,
       "index": 15,
       "key_objects": [
-        "egg",
         "frying pan",
-        "plate"
+        "plate",
+        "egg"
       ],
-      "start_s": 694.0,
-      "title": "Plate the herb omelet",
+      "start_s": 691.0,
+      "title": "Serve omelette with tomatoes",
+      "keystep": "transfer omelette to the plate and serve with the tomatoes",
       "reference_frame": "results/checklists/home_cooking_step15.jpg"
     }
   ],
-  "task_summary": "Prepare herb omelet with fried tomatoes by washing and halving tomato, chopping herbs, mixing egg with herbs and seasoning, frying tomatoes, then cooking the omelet and plating together.",
+  "task_summary": "Make a herb omelet served with fried tomatoes in a home kitchen.",
   "task": "home_cooking",
   "reference_video": "cc4d_22_21",
   "duration": 710.997333,

@@ -18,6 +18,7 @@ data/proxy/
 # generated results: only summary.md, PNG charts and checklists are committed
 results/*
 !results/summary.md
+!results/summary_dev.md
 !results/*.png
 !results/checklists/
 results/checklists/*

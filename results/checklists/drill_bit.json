@@ -1,66 +1,74 @@
 {
   "steps": [
     {
-      "description": "The person holds the drill with both hands and slides the battery pack off the base, placing it on the table.",
-      "end_s": 7.0,
+      "description": "The hands lift the drill and slide the battery pack off its base and set it on the bench.",
+      "done_when": "the drill is de-energized with the power source separated and set aside",
+      "end_s": 6.8,
       "index": 1,
       "key_objects": [
-        "electric drill",
-        "power plug"
+        "electric drill"
       ],
-      "start_s": 4.0,
-      "title": "Remove the battery pack",
+      "start_s": 1.5,
+      "title": "Disconnect the drill from power",
+      "keystep": "unplug",
       "reference_frame": "results/checklists/drill_bit_step01.jpg"
     },
     {
-      "description": "The person loosens the chuck by hand and pulls the old bit out of the drill, then sets it down on the table.",
-      "end_s": 16.0,
+      "description": "The hands twist the chuck open and pull the old bit out and lay it on the bench.",
+      "done_when": "the chuck is empty and the old bit is set aside on the bench",
+      "end_s": 17.0,
       "index": 2,
       "key_objects": [
         "electric drill",
         "drill bit"
       ],
-      "start_s": 8.0,
+      "start_s": 7.2,
       "title": "Remove the old drill bit",
+      "keystep": "remove bit",
       "reference_frame": "results/checklists/drill_bit_step02.jpg"
     },
     {
-      "description": "The person opens the bit case on the side table and picks out a new drill bit with the fingers.",
-      "end_s": 22.8,
+      "description": "The hands open the bit case, select a new bit, place it in the chuck and twist the chuck tight.",
+      "done_when": "the replacement bit is centered in the chuck and the chuck is tightened",
+      "end_s": 39.5,
       "index": 3,
       "key_objects": [
+        "electric drill",
         "drill bit"
       ],
-      "start_s": 19.5,
-      "title": "Select a new drill bit",
+      "start_s": 18.0,
+      "title": "Insert the new drill bit",
+      "keystep": "insert bit",
       "reference_frame": "results/checklists/drill_bit_step03.jpg"
     },
     {
-      "description": "The person inserts the new bit into the chuck and twists the chuck tight to secure it.",
-      "end_s": 38.5,
+      "description": "The hands pick up the battery pack and slide it onto the drill base until seated.",
+      "done_when": "the drill is re-energized with the power source firmly seated",
+      "end_s": 43.5,
       "index": 4,
       "key_objects": [
-        "electric drill",
-        "drill bit"
+        "electric drill"
       ],
-      "start_s": 24.0,
-      "title": "Install the new drill bit",
+      "start_s": 40.0,
+      "title": "Reconnect the drill to power",
+      "keystep": "plug in",
       "reference_frame": "results/checklists/drill_bit_step04.jpg"
     },
     {
-      "description": "The person picks up the battery pack and slides it back onto the base of the drill until seated.",
-      "end_s": 43.5,
+      "description": "The hands hold the drill, run it briefly to spin the new bit, then set it down on the bench.",
+      "done_when": "the drill spins correctly and is left resting on the bench",
+      "end_s": 50.5,
       "index": 5,
       "key_objects": [
-        "electric drill",
-        "power plug"
+        "electric drill"
       ],
-      "start_s": 40.5,
-      "title": "Reattach the battery pack",
+      "start_s": 44.0,
+      "title": "Test the drill",
+      "keystep": "test",
       "reference_frame": "results/checklists/drill_bit_step05.jpg"
     }
   ],
-  "task_summary": "Change the drill bit on a cordless electric drill by disconnecting power, swapping the bit, and reconnecting power.",
+  "task_summary": "Change the drill bit on a cordless electric drill with safe power disconnect, bit swap, reconnect, and operational test.",
   "task": "drill_bit",
   "reference_video": "07_u01_r02_c_01",
   "duration": 51.4,

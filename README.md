@@ -97,9 +97,15 @@ uv run python -m pr.inject swap --video 22_u15_r03_c_01 --step-a "add battery" -
 uv run python -m pr.inject none --video 22_u16_r03_c_01
 
 # full evaluation (--dry-run: cached results only, no API calls)
-uv run python scripts/run_eval.py
+uv run python scripts/run_eval.py               # held-out test set: data/ground_truth.jsonl
+uv run python scripts/run_eval.py --set dev     # dev set: data/ground_truth_dev.jsonl
 uv run python tests/test_score.py
 ```
+
+**Dev / test split.** Prompts and pipeline changes are tuned on the dev set only: flaws injected into
+*other* takes (`uv run python -m pr.inject --set dev ...`). The held-out test set (6 flaws + 2 clean videos)
+is re-scored only to report results. Videos of both sets and their source takes are excluded from
+learning order rules.
 
 Every API call is logged with tokens/frames and estimated cost to `results/costs.csv`.
 
@@ -113,15 +119,15 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `src/pr/client.py` | Meta Model API wrapper: file upload, SAM 3.1 streaming, Muse Spark structured output, retries, cost log | day 1 |
 | `src/pr/frames.py` | ffprobe, 5 fps proxy with burned-in clock, trimming, frame grabs | day 1 |
 | `src/pr/track.py` | SAM output → per-object presence timeline | day 1 |
-| `src/pr/steps.py` | Muse Spark → checklist JSON with timestamps and reference frames | day 1 |
-| `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name, ground truth + attribution logging; refuses swaps a recipe allows | day 1 |
+| `src/pr/steps.py` | Muse Spark → checklist JSON (from the expert's step names) with timestamps, "done when", reference frames | day 1–2 |
+| `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name (cuts padded ±3 s), dev/test ground truth + attribution logging; refuses swaps a recipe allows | day 1–2 |
 | `scripts/import_indego.py` | Registers downloaded IndEgo videos: manifest, attribution, keystep labels, real-mistake labels | day 1 |
 | `scripts/import_captaincook.py` | Prints CaptainCook4D download commands; registers videos, step labels, recipe graph, real-error labels | day 1 |
-| `src/pr/align.py` | Muse Spark reviews a trainee video against the reference checklist (done? when?), maps checklist steps to keysteps | day 1 |
+| `src/pr/align.py` | Muse Spark reviews a trainee video against the reference checklist (done? when?, judged by purpose), re-checks each "not done" step on its own | day 1–2 |
 | `src/pr/judge.py`, `src/pr/order.py` | Missing / out-of-order flags; order rules from the recipe graph or learned from correct takes | day 1 |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
-| `scripts/run_eval.py` | Runs the pipeline over the manifest and scores it against ground truth | day 1 (stages stubbed) |
+| `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth | day 1–2 |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
 ## Third-party

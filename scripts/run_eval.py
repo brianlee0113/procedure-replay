@@ -3,8 +3,10 @@
     uv run python scripts/run_eval.py                 # run missing stages (API calls), then score
     uv run python scripts/run_eval.py --dry-run       # cached checklists/reports only, no API calls
     uv run python scripts/run_eval.py --flags F.json  # score precomputed flags {video_id: [flag, ...]}
+    uv run python scripts/run_eval.py --set dev       # dev set (data/ground_truth_dev.jsonl)
 
-Prints detected X/6, false flags Y/2, and a per-video table; writes results/summary.md.
+Two sets: prompts are tuned on `dev` (flaws injected into other takes); the held-out `test` set is scored to
+report results. Prints detected X/N, false flags Y/M, and a per-video table; writes results/summary[_dev].md.
 """
 
 import argparse
@@ -23,8 +25,12 @@ from pr.steps import CHECKLISTS, extract_steps, load_tasks
 TARGET_DETECTED, TARGET_FLAWED, TARGET_CLEAN = 5, 6, 2
 
 
-def load_ground_truth() -> list[dict]:
-    lines = (ROOT / "data" / "ground_truth.jsonl").read_text().splitlines()
+GROUND_TRUTH = {"test": ROOT / "data" / "ground_truth.jsonl", "dev": ROOT / "data" / "ground_truth_dev.jsonl"}
+
+
+def load_ground_truth(which: str) -> list[dict]:
+    path = GROUND_TRUTH[which]
+    lines = path.read_text().splitlines() if path.exists() else []
     return [json.loads(l) for l in lines if l.strip()]
 
 
@@ -78,13 +84,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--tol", type=float, default=5.0, help="timestamp tolerance in seconds")
     ap.add_argument("--dry-run", action="store_true", help="use cached results only; no API calls")
+    ap.add_argument("--set", choices=list(GROUND_TRUTH), default="test")
     ap.add_argument("--flags", help="JSON file {video_id: [flags]} to score instead of running the pipeline")
     args = ap.parse_args()
 
     manifest = {r["video_id"]: r for r in load_manifest()}
     given = json.loads(open(args.flags).read()) if args.flags else None
-    ground_truth = load_ground_truth()
-    pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for gt in ground_truth})
+    ground_truth = load_ground_truth(args.set)
+    # Exclude both sets' videos from order-rule learning, so the rules are the same for dev and test.
+    pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for w in GROUND_TRUTH for gt in load_ground_truth(w)})
     rows, skipped = [], []
 
     for gt in ground_truth:
@@ -123,15 +131,16 @@ def main() -> int:
     ff = f"False flags {summary['false_flags']}/{summary['n_clean']}  (target 0/{TARGET_CLEAN})"
     print(f"\n{det}\n{ff}")
 
-    md = [f"# ProcedureReplay evaluation", "",
+    md = [f"# ProcedureReplay evaluation ({args.set} set)", "",
           f"Run {datetime.now().isoformat(timespec='minutes')}, timestamp tolerance ±{args.tol:g}s.", "",
           f"- **{det}**", f"- **{ff}**", "",
           "| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
     md += ["| " + " | ".join(str(r[h]) for h in headers) + " |" for r in rows]
     if skipped:
         md += ["", "Skipped:", *[f"- `{v}`: {w}" for v, w in skipped]]
-    (RESULTS / "summary.md").write_text("\n".join(md) + "\n")
-    print(f"wrote {(RESULTS / 'summary.md').relative_to(ROOT)}")
+    out = RESULTS / ("summary.md" if args.set == "test" else f"summary_{args.set}.md")
+    out.write_text("\n".join(md) + "\n")
+    print(f"wrote {out.relative_to(ROOT)}")
     return 0
 
 

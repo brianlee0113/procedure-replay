@@ -1,107 +1,126 @@
 {
   "steps": [
     {
-      "description": "The hands unscrew the rear thumbscrew and slide the black side panel off to expose the interior.",
-      "end_s": 31.0,
+      "description": "Both hands loosen the rear screw and slide the black side panel off the chassis.",
+      "done_when": "the side panel is removed and the motherboard interior is fully exposed",
+      "end_s": 31.5,
       "index": 1,
       "key_objects": [
         "computer case"
       ],
-      "start_s": 7.0,
-      "title": "Remove the side panel",
+      "start_s": 6.2,
+      "title": "Open the computer case",
+      "keystep": "open pc",
       "reference_frame": "results/checklists/pc_repair_step01.jpg"
     },
     {
-      "description": "The hands insert the small round CMOS battery into its socket on the motherboard.",
+      "description": "The hands take a small coin cell from the parts tray and press it into its motherboard holder.",
+      "done_when": "the battery is seated in its holder to retain BIOS settings",
       "end_s": 103.0,
       "index": 2,
       "key_objects": [
         "coin cell battery"
       ],
-      "start_s": 95.0,
-      "title": "Install the coin cell battery",
+      "start_s": 94.8,
+      "title": "Insert the coin-cell battery",
+      "keystep": "add battery",
       "reference_frame": "results/checklists/pc_repair_step02.jpg"
     },
     {
-      "description": "The hands seat the green RAM modules into the blue memory slots and press the clips closed.",
-      "end_s": 182.0,
+      "description": "The hands pick up two memory modules and press them into the blue motherboard slots.",
+      "done_when": "both sticks are seated and their retaining clips are closed",
+      "end_s": 182.8,
       "index": 3,
       "key_objects": [
         "RAM stick"
       ],
-      "start_s": 109.0,
+      "start_s": 108.2,
       "title": "Install the RAM sticks",
+      "keystep": "add ram",
       "reference_frame": "results/checklists/pc_repair_step03.jpg"
     },
     {
-      "description": "The hands plug the red data lead and power leads into the hard disk drive in the front bay.",
-      "end_s": 206.0,
+      "description": "The hands plug the red data lead and the power lead into the drive in the front bay.",
+      "done_when": "the drive is cabled for data and power and ready for use",
+      "end_s": 206.5,
       "index": 4,
       "key_objects": [
-        "hard disk drive"
+        "hard disk drive",
+        "power cable"
       ],
       "start_s": 190.0,
       "title": "Connect the hard disk drive",
+      "keystep": "attach hard disk",
       "reference_frame": "results/checklists/pc_repair_step04.jpg"
     },
     {
-      "description": "The hands route the PSU leads and seat the system power connectors onto the motherboard.",
-      "end_s": 257.0,
+      "description": "The hands route the small white fan connector to its motherboard header and push it on.",
+      "done_when": "the fan lead is connected so the fan can be powered and controlled",
+      "end_s": 256.0,
       "index": 5,
-      "key_objects": [
-        "power cable"
-      ],
-      "start_s": 215.0,
-      "title": "Connect system power to motherboard",
-      "reference_frame": "results/checklists/pc_repair_step05.jpg"
-    },
-    {
-      "description": "The hands plug the rear cooling fan lead into its motherboard fan header.",
-      "end_s": 289.0,
-      "index": 6,
       "key_objects": [
         "cooling fan"
       ],
-      "start_s": 259.0,
-      "title": "Connect the cooling fan cable",
+      "start_s": 215.2,
+      "title": "Attach the cooling-fan cable",
+      "keystep": "attach fan",
+      "reference_frame": "results/checklists/pc_repair_step05.jpg"
+    },
+    {
+      "description": "The hands join PSU leads and plug the system power connectors onto the motherboard.",
+      "done_when": "the motherboard power feeds are firmly mated and dressed in place",
+      "end_s": 289.5,
+      "index": 6,
+      "key_objects": [
+        "power cable"
+      ],
+      "start_s": 257.0,
+      "title": "Attach the system power",
+      "keystep": "attach power",
       "reference_frame": "results/checklists/pc_repair_step06.jpg"
     },
     {
-      "description": "The hands wipe the inside of the open chassis with the blue cleaning cloth.",
-      "end_s": 319.0,
+      "description": "The hands wipe the inside of the chassis with a blue cloth.",
+      "done_when": "the interior is free of dust and ready for closing",
+      "end_s": 319.5,
       "index": 7,
       "key_objects": [
         "computer case"
       ],
-      "start_s": 298.0,
-      "title": "Clean the interior with cloth",
+      "start_s": 297.6,
+      "title": "Clean the PC interior",
+      "keystep": "clean",
       "reference_frame": "results/checklists/pc_repair_step07.jpg"
     },
     {
-      "description": "The hands fit the side panel back onto the chassis and retighten the rear thumbscrew.",
+      "description": "The hands lift the side panel from the chair, slide it onto the chassis and retighten the rear screw.",
+      "done_when": "the panel is flush, secured and the case is closed",
       "end_s": 370.0,
       "index": 8,
       "key_objects": [
         "computer case"
       ],
-      "start_s": 322.0,
-      "title": "Replace the side panel",
+      "start_s": 322.4,
+      "title": "Close the computer case",
+      "keystep": "close pc",
       "reference_frame": "results/checklists/pc_repair_step08.jpg"
     },
     {
-      "description": "The hands connect mains and display cables and power on the PC to verify the boot screen.",
-      "end_s": 474.0,
+      "description": "The hands connect mains and monitor leads, plug in and power on the unit to show boot on screen.",
+      "done_when": "the system powers on and the boot display confirms successful repair",
+      "end_s": 491.7,
       "index": 9,
       "key_objects": [
         "computer case",
         "power cable"
       ],
       "start_s": 379.0,
-      "title": "Connect power and test boot",
+      "title": "Test the repaired PC",
+      "keystep": "test",
       "reference_frame": "results/checklists/pc_repair_step09.jpg"
     }
   ],
-  "task_summary": "Open the PC, install battery and RAM, connect HDD, power and fan, clean, close case and test boot.",
+  "task_summary": "Repair a PC by opening the case, installing battery and RAM, cabling disk, fan and power, cleaning, closing and boot-testing.",
   "task": "pc_repair",
   "reference_video": "22_u17_r03_c_01",
   "duration": 491.650998,

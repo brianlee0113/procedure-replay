@@ -1,5 +1,10 @@
 """extract_steps(ref_video) -> checklist JSON via Muse Spark structured output.
 
+If the task lists the expert's step names (`keysteps` in config/tasks.yaml), Muse Spark is given them and
+finds each one on the reference video, writing the title, description and "done when" itself. Without
+names it splits the video on its own. On the dev set, its own split did not line up with the expert's steps
+(two PC steps swapped names; several recipe steps merged), so a trainee could not be checked step by step.
+
 The proxy shows an MM:SS.s clock in its top-left corner; Muse Spark's frame sampling is undocumented,
 so the prompt asks it to read step boundaries from that clock.
 """
@@ -28,11 +33,12 @@ SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["index", "title", "description", "start_s", "end_s", "key_objects"],
+                "required": ["index", "title", "description", "done_when", "start_s", "end_s", "key_objects"],
                 "properties": {
                     "index": {"type": "integer"},
                     "title": {"type": "string"},
                     "description": {"type": "string"},
+                    "done_when": {"type": "string"},
                     "start_s": {"type": "number"},
                     "end_s": {"type": "number"},
                     "key_objects": {"type": "array", "items": {"type": "string"}},
@@ -53,7 +59,25 @@ For each step give:
 - index: 1-based order
 - title: short imperative phrase, e.g. "Remove the old toner cartridge"
 - description: one sentence on what the hands do
+- done_when: the visible end state that shows the step is complete, stated by purpose rather than by the
+  exact tool, e.g. "the cartridge is seated and its latch is closed"
 - start_s, end_s: seconds, read from the on-screen clock; steps must not overlap and must be in time order
+- key_objects: which of these objects are handled in the step: {objects}
+"""
+
+SEEDED_PROMPT = """This video shows one person performing the manual task: {task_name}.
+A clock in the top-left corner shows elapsed time as MM:SS.s. The video is {duration:.1f} seconds long.
+
+The expert who recorded it names its steps as follows:
+{names}
+
+For EACH named step, in this order, find where it happens in the video and give:
+- index: the number above
+- title: short imperative phrase for a trainee, e.g. "Remove the old toner cartridge"
+- description: one sentence on what the hands do
+- done_when: the visible end state that shows the step is complete, stated by purpose rather than by the
+  exact tool, e.g. "the cartridge is seated and its latch is closed"
+- start_s, end_s: seconds, read from the on-screen clock
 - key_objects: which of these objects are handled in the step: {objects}
 """
 
@@ -66,10 +90,20 @@ def extract_steps(ref_video: str, task: str, client: MetaClient) -> dict:
     cfg = load_tasks()[task]
     p = prepare(ref_video, client)
     vid, duration = p["video_id"], p["info"]["duration"]
-    prompt = PROMPT.format(task_name=cfg["name"], duration=duration, expected=cfg["expected_steps"],
-                           objects=", ".join(cfg["object_prompts"]))
+    names = cfg.get("keysteps")
+    objects = ", ".join(cfg["object_prompts"])
+    if names:
+        prompt = SEEDED_PROMPT.format(task_name=cfg["name"], duration=duration, objects=objects,
+                                      names="\n".join(f"{i}. {n}" for i, n in enumerate(names, 1)))
+    else:
+        prompt = PROMPT.format(task_name=cfg["name"], duration=duration, expected=cfg["expected_steps"],
+                               objects=objects)
     print(f"  Muse Spark ({client.spark_model}) segmenting {vid} ({duration:.0f}s)…")
     checklist = client.spark_json(p["file_id"], prompt, SCHEMA, "procedure_checklist", vid, purpose="steps")
+    if names:
+        checklist["steps"] = [s for s in checklist["steps"] if 1 <= s["index"] <= len(names)]
+        for s in checklist["steps"]:
+            s["keystep"] = names[s["index"] - 1]
     checklist.update({"task": task, "reference_video": vid, "duration": duration, "model": client.spark_model})
 
     CHECKLISTS.mkdir(parents=True, exist_ok=True)

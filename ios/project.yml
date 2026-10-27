@@ -38,6 +38,9 @@ targets:
           # Opt out of the SDK's usage analytics (on by default; README "Analytics").
           Analytics:
             OptOut: true
+          # Opt out of SDK crash capture too (on by default; README "Crash reporting").
+          CrashReporting:
+            OptOut: true
         UIBackgroundModes: [processing, bluetooth-central, bluetooth-peripheral, external-accessory]
         UISupportedExternalAccessoryProtocols: [com.meta.ar.wearable]
         NSBluetoothAlwaysUsageDescription: Needed to connect to Meta AI glasses.

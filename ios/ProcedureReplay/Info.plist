@@ -42,6 +42,11 @@
 		<string>procedurereplay://</string>
 		<key>ClientToken</key>
 		<string></string>
+		<key>CrashReporting</key>
+		<dict>
+			<key>OptOut</key>
+			<true/>
+		</dict>
 		<key>MetaAppID</key>
 		<string></string>
 		<key>TeamID</key>

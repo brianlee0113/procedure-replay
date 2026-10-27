@@ -12,6 +12,23 @@ Runs on the Mac next to the pipeline, so the Meta API key never leaves it. Endpo
     GET  /reviews/{id}                       status, then per-step answers and flags
     GET  /videos/{id}                        the uploaded recording, for evidence playback
 
+Guides (the app's main flow; contract in docs/B0_guide_eval_plan.md §2). The caller is named by the
+X-User header (default "me"); drafts are visible to their author only, private guides to anyone with
+the id, public guides also appear in the feed.
+
+    GET    /categories                       category taxonomy (id → label)
+    POST   /recordings                       multipart: video + source_video_id or license + creator → job
+    GET    /jobs/{id}                        stages (upload, transcribe, read_text, split, write) + guide_id
+    GET    /guides/{id}                      guide, meta, reactions, my progress
+    PATCH  /guides/{id}/steps/{index}        author's Draft edit: text, or re-cut start_s / end_s
+    POST   /guides/{id}/publish              title / summary / category, visibility private|public
+    GET    /guides/{id}/cover.jpg            guide cover; /guides/{id}/steps/{index}/cover.jpg per step
+    GET    /guides/{id}/clips/{index}.mp4    the step's loop clip
+    POST   /guides/{id}/like|save            DELETE to undo
+    PUT    /guides/{id}/progress             {"step": n}: where I stopped
+    GET    /feed?category=                   public guides, newest first
+    GET    /library                          continue (in progress), saved, mine
+
 A recording goes through the same license gate as dataset videos: it gets a row in data/manifest_app.csv
 (not in git) that either inherits the license of the video fed to the mock glasses (source_video_id) or
 states one (license + creator, e.g. your own recording under CC-BY-4.0). A row the gate refuses is never
@@ -20,16 +37,19 @@ evaluation are unchanged.
 """
 
 import json
+import os
 import shutil
 import threading
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
+from pr import guides
 from pr.align import align, keystep_of, unanswered
 from pr.client import RESULTS, MetaClient
 from pr.judge import judge
@@ -147,10 +167,9 @@ def run_review(review_id: str, video_id: str, task: str) -> None:
         write_json(path, {**state, "status": "error", "error": f"{type(e).__name__}: {e}"})
 
 
-@app.post("/reviews", status_code=202)
-def create_review(task: str = Form(...), video: UploadFile = File(...), source_video_id: str | None = Form(None),
-                  license: str | None = Form(None), creator: str | None = Form(None)) -> dict:
-    checklist(task)
+def store_upload(video_id: str, video: UploadFile, task: str, role: str, source_video_id: str | None,
+                 license: str | None, creator: str | None) -> str:
+    """Save an app recording with a manifest row that passes the license gate, or refuse it before storing."""
     if source_video_id:
         try:
             src = require_allowed(source_video_id)
@@ -161,12 +180,9 @@ def create_review(task: str = Form(...), video: UploadFile = File(...), source_v
         rights = {"creator": creator, "source_url": "recorded with the ProcedureReplay app", "license": license}
     else:
         raise HTTPException(400, "send source_video_id (the video fed to the mock glasses) or license + creator")
-
-    review_id = uuid.uuid4().hex[:12]
-    video_id = f"app_{review_id}"
     suffix = ".mov" if (video.filename or "").lower().endswith(".mov") else ".mp4"
     dest = UPLOADS / f"{video_id}{suffix}"
-    row = {"video_id": video_id, "task": task, "role": "trainee", "local_path": str(dest.relative_to(ROOT)), **rights}
+    row = {"video_id": video_id, "task": task, "role": role, "local_path": str(dest.relative_to(ROOT)), **rights}
     if problems := check_row(row):  # refuse before anything is stored
         raise HTTPException(403, f"{video_id}: refused — " + "; ".join(problems))
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -177,7 +193,15 @@ def create_review(task: str = Form(...), video: UploadFile = File(...), source_v
             APP_MANIFEST.write_text(",".join(FIELDS) + "\n")
         append_manifest_row(row, APP_MANIFEST)
     require_allowed(video_id)
+    return video_id
 
+
+@app.post("/reviews", status_code=202)
+def create_review(task: str = Form(...), video: UploadFile = File(...), source_video_id: str | None = Form(None),
+                  license: str | None = Form(None), creator: str | None = Form(None)) -> dict:
+    checklist(task)
+    review_id = uuid.uuid4().hex[:12]
+    video_id = store_upload(f"app_{review_id}", video, task, "trainee", source_video_id, license, creator)
     state = {"id": review_id, "video_id": video_id, "task": task, "status": "queued",
              "video_url": f"/videos/{review_id}", "source_video_id": source_video_id,
              "created": datetime.now(timezone.utc).isoformat(timespec="seconds")}
@@ -202,3 +226,265 @@ def video(review_id: str) -> FileResponse:
         raise HTTPException(404, "no such video")
     return FileResponse(local_path(row), media_type="video/quicktime" if row["local_path"].endswith(".mov")
                         else "video/mp4")
+
+
+# ---------------------------------------------------------------------------------------------------------
+# Guides: record → build → Draft → publish → feed / library
+# ---------------------------------------------------------------------------------------------------------
+
+JOBS = APP / "jobs"
+REACTIONS = APP / "reactions.json"
+PROGRESS = APP / "progress.json"
+STAGES = ("upload", "transcribe", "read_text", "split", "write")
+# The stand-in builder has nothing to wait for; a short pause per stage lets the app's Building screen show them.
+STAGE_DELAY_S = float(os.environ.get("PR_STAGE_DELAY_S", "0.6"))
+DEFAULT_CATEGORY = {"pc_repair": "repair_maintenance", "drill_bit": "workshop_tools", "home_cooking": "cooking"}
+USER = Header("me", alias="X-User")
+
+
+def read_json(path, default):
+    return json.loads(path.read_text()) if path.exists() else default
+
+
+def checklist_builder(job: dict, set_stage) -> guides.Guide:
+    """Stand-in until the B2 pipeline: the committed checklist of the recording's task, on the dataset's
+    reference video (so clips and covers come from real footage). Replace with the B2 builder."""
+    for stage in STAGES[1:]:
+        set_stage(stage)
+        time.sleep(STAGE_DELAY_S)
+    task = job["task"]
+    return guides.from_checklist(task, job["guide_id"], DEFAULT_CATEGORY.get(task, "other"))
+
+
+build_guide = checklist_builder
+
+
+def run_job(job_id: str) -> None:
+    path = JOBS / f"{job_id}.json"
+    job = json.loads(path.read_text())
+
+    def set_stage(stage: str) -> None:
+        job["stages"] = {s: ("done" if STAGES.index(s) < STAGES.index(stage) else
+                             "running" if s == stage else "queued") for s in STAGES}
+        job["status"] = "running"
+        write_json(path, job)
+
+    try:
+        guide = build_guide(job, set_stage)
+        guides.save(guide, guides.Meta(author=job["author"], author_name=job["author_name"], job_id=job_id))
+        job.update(status="done", stages={s: "done" for s in STAGES}, finished=guides.now())
+    except Exception as e:  # report any failure to the app instead of leaving the job "running"
+        job.update(status="error", error=f"{type(e).__name__}: {e}")
+    write_json(path, job)
+
+
+@app.get("/categories")
+def categories() -> dict:
+    return guides.CATEGORIES
+
+
+@app.post("/recordings", status_code=202)
+def create_recording(task: str = Form(...), video: UploadFile = File(...), source_video_id: str | None = Form(None),
+                     license: str | None = Form(None), creator: str | None = Form(None),
+                     author_name: str = Form("You"), user: str = USER) -> dict:
+    job_id = uuid.uuid4().hex[:12]
+    video_id = store_upload(f"app_rec_{job_id}", video, task, "reference", source_video_id, license, creator)
+    job = {"id": job_id, "video_id": video_id, "task": task, "guide_id": f"g_{job_id}", "author": user,
+           "author_name": author_name, "status": "queued", "created": guides.now(),
+           "stages": {s: ("done" if s == "upload" else "queued") for s in STAGES}}
+    write_json(JOBS / f"{job_id}.json", job)
+    worker.submit(run_job, job_id)
+    return job
+
+
+@app.get("/jobs/{job_id}")
+def get_job(job_id: str) -> dict:
+    path = JOBS / f"{job_id}.json"
+    if not path.exists():
+        raise HTTPException(404, "no such job")
+    return json.loads(path.read_text())
+
+
+def visible(guide_id: str, user: str) -> tuple[guides.Guide, guides.Meta]:
+    try:
+        guide, meta = guides.load(guide_id)
+    except KeyError:
+        raise HTTPException(404, "no such guide")
+    if meta.visibility == "draft" and meta.author != user:
+        raise HTTPException(404, "no such guide")
+    return guide, meta
+
+
+def owned(guide_id: str, user: str) -> tuple[guides.Guide, guides.Meta]:
+    guide, meta = visible(guide_id, user)
+    if meta.author != user:
+        raise HTTPException(403, "only the author can change this guide")
+    return guide, meta
+
+
+def reactions_of(guide_id: str, user: str) -> dict:
+    r = read_json(REACTIONS, {}).get(guide_id, {"likes": [], "saves": []})
+    return {"likes": len(r["likes"]), "saves": len(r["saves"]), "liked": user in r["likes"], "saved": user in r["saves"]}
+
+
+def card(guide: guides.Guide, meta: guides.Meta, user: str) -> dict:
+    return {"guide_id": guide.guide_id, "title": guide.title, "category": guide.category,
+            "category_label": guides.CATEGORIES[guide.category], "steps": len(guide.steps),
+            "duration_s": guide.duration_s, "author": meta.author, "author_name": meta.author_name,
+            "author_role": meta.author_role, "visibility": meta.visibility, "published_at": meta.published_at,
+            "cover_url": f"/guides/{guide.guide_id}/cover.jpg", **reactions_of(guide.guide_id, user)}
+
+
+@app.get("/guides/{guide_id}")
+def get_guide(guide_id: str, user: str = USER) -> dict:
+    guide, meta = visible(guide_id, user)
+    data = guide.model_dump()
+    for s in data["steps"]:
+        s["clip_url"] = f"/guides/{guide_id}/clips/{s['index']}.mp4"
+        s["cover_url"] = f"/guides/{guide_id}/steps/{s['index']}/cover.jpg"
+    return {"guide": data, "meta": meta.model_dump(), "category_label": guides.CATEGORIES[guide.category],
+            "reactions": reactions_of(guide_id, user),
+            "progress": read_json(PROGRESS, {}).get(user, {}).get(guide_id)}
+
+
+class GuideStepEdit(BaseModel):
+    title: str | None = None
+    instruction: str | None = None
+    done_when: str | None = None
+    start_s: float | None = None
+    end_s: float | None = None
+
+
+@app.patch("/guides/{guide_id}/steps/{index}")
+def edit_guide_step(guide_id: str, index: int, edit: GuideStepEdit, user: str = USER) -> dict:
+    with lock:
+        guide, meta = owned(guide_id, user)
+        step = next((s for s in guide.steps if s.index == index), None)
+        if step is None:
+            raise HTTPException(404, f"no step {index}")
+        changes = {k: v for k, v in edit.model_dump().items() if v is not None}
+        updated = step.model_copy(update=changes)
+        if "start_s" in changes or "end_s" in changes:  # re-cut: the loop clip and cover follow the new bounds
+            updated.clip = guides.padded(updated.start_s, updated.end_s, guide.duration_s)
+            updated.cover_s = (updated.start_s + updated.end_s) / 2
+        try:
+            guide = guides.Guide.model_validate({**guide.model_dump(), "steps": [
+                (updated if s.index == index else s).model_dump() for s in guide.steps]})
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        guides.save(guide, meta)
+    return get_guide(guide_id, user)["guide"]["steps"][index - 1]
+
+
+class Publish(BaseModel):
+    visibility: guides.Literal["private", "public"]
+    title: str | None = None
+    summary: str | None = None
+    category: guides.Category | None = None
+
+
+@app.post("/guides/{guide_id}/publish")
+def publish(guide_id: str, body: Publish, user: str = USER) -> dict:
+    with lock:
+        guide, meta = owned(guide_id, user)
+        guide = guide.model_copy(update={k: v for k, v in body.model_dump().items() if v is not None and k != "visibility"})
+        meta = meta.model_copy(update={"visibility": body.visibility, "published_at": meta.published_at or guides.now()})
+        guides.save(guide, meta)
+    return card(guide, meta, user)
+
+
+@app.get("/guides/{guide_id}/cover.jpg")
+def guide_cover(guide_id: str, user: str = USER) -> FileResponse:
+    return FileResponse(guides.cover(visible(guide_id, user)[0]), media_type="image/jpeg")
+
+
+@app.get("/guides/{guide_id}/steps/{index}/cover.jpg")
+def step_cover(guide_id: str, index: int, user: str = USER) -> FileResponse:
+    guide = visible(guide_id, user)[0]
+    if not any(s.index == index for s in guide.steps):
+        raise HTTPException(404, f"no step {index}")
+    return FileResponse(guides.cover(guide, index), media_type="image/jpeg")
+
+
+@app.get("/guides/{guide_id}/clips/{index}.mp4")
+def step_clip(guide_id: str, index: int, user: str = USER) -> FileResponse:
+    guide = visible(guide_id, user)[0]
+    if not any(s.index == index for s in guide.steps):
+        raise HTTPException(404, f"no step {index}")
+    return FileResponse(guides.clip(guide, index), media_type="video/mp4")
+
+
+def react(guide_id: str, kind: str, user: str, on: bool) -> dict:
+    visible(guide_id, user)
+    with lock:
+        data = read_json(REACTIONS, {})
+        r = data.setdefault(guide_id, {"likes": [], "saves": []})
+        r[kind] = sorted(set(r[kind]) | {user}) if on else [u for u in r[kind] if u != user]
+        write_json(REACTIONS, data)
+    return reactions_of(guide_id, user)
+
+
+@app.post("/guides/{guide_id}/like")
+def like(guide_id: str, user: str = USER) -> dict:
+    return react(guide_id, "likes", user, True)
+
+
+@app.delete("/guides/{guide_id}/like")
+def unlike(guide_id: str, user: str = USER) -> dict:
+    return react(guide_id, "likes", user, False)
+
+
+@app.post("/guides/{guide_id}/save")
+def save_guide(guide_id: str, user: str = USER) -> dict:
+    return react(guide_id, "saves", user, True)
+
+
+@app.delete("/guides/{guide_id}/save")
+def unsave_guide(guide_id: str, user: str = USER) -> dict:
+    return react(guide_id, "saves", user, False)
+
+
+class Progress(BaseModel):
+    step: int
+
+
+@app.put("/guides/{guide_id}/progress")
+def set_progress(guide_id: str, body: Progress, user: str = USER) -> dict:
+    guide, _ = visible(guide_id, user)
+    if not 1 <= body.step <= len(guide.steps):
+        raise HTTPException(422, f"step must be 1..{len(guide.steps)}")
+    with lock:
+        data = read_json(PROGRESS, {})
+        data.setdefault(user, {})[guide_id] = body.step
+        write_json(PROGRESS, data)
+    return {"guide_id": guide_id, "step": body.step}
+
+
+@app.get("/feed")
+def feed(category: guides.Category | None = None, user: str = USER) -> list[dict]:
+    cards = []
+    for gid in guides.all_ids():
+        guide, meta = guides.load(gid)
+        if meta.visibility == "public" and (category is None or guide.category == category):
+            cards.append(card(guide, meta, user))
+    return sorted(cards, key=lambda c: c["published_at"] or "", reverse=True)
+
+
+@app.get("/library")
+def library(user: str = USER) -> dict:
+    progress = read_json(PROGRESS, {}).get(user, {})
+    reactions = read_json(REACTIONS, {})
+    out = {"continue": [], "saved": [], "mine": []}
+    for gid in guides.all_ids():
+        guide, meta = guides.load(gid)
+        if meta.visibility == "draft" and meta.author != user:
+            continue
+        c = card(guide, meta, user)
+        if meta.author == user:
+            out["mine"].append(c)
+        if user in reactions.get(gid, {}).get("saves", []):
+            out["saved"].append(c)
+        if gid in progress and progress[gid] < len(guide.steps):
+            step = guide.steps[progress[gid] - 1]
+            out["continue"].append({**c, "step": progress[gid], "next_step_title": step.title})
+    return out

@@ -7,6 +7,9 @@
 data/raw/
 data/edited/
 data/proxy/
+# recordings sent by the iPhone app, and their manifest rows (local only)
+data/uploads/
+data/manifest_app.csv
 *.mp4
 *.mov
 *.MP4

@@ -14,6 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "data" / "manifest.csv"
+APP_MANIFEST = ROOT / "data" / "manifest_app.csv"
 FIELDS = ["video_id", "task", "creator", "source_url", "license", "role", "local_path"]
 
 _ALLOWED = re.compile(r"^(CC0|CC-BY|CC-BY-SA)(-\d+(\.\d+)?)?$|^(PEXELS|PIXABAY)(-LICENSE)?$|^APACHE-2\.0$")
@@ -56,9 +57,14 @@ def append_manifest_row(row: dict, path: Path = MANIFEST) -> None:
         csv.DictWriter(f, fieldnames=FIELDS).writerow({k: row.get(k, "") for k in FIELDS})
 
 
+def load_all() -> list[dict]:
+    """Dataset rows plus the app's recordings (data/manifest_app.csv, not in git)."""
+    return load_manifest() + (load_manifest(APP_MANIFEST) if APP_MANIFEST.exists() else [])
+
+
 def find_row(video: str, rows: list[dict] | None = None) -> dict:
     """Look up a manifest row by video_id or by local_path (relative to repo root or absolute)."""
-    rows = load_manifest() if rows is None else rows
+    rows = load_all() if rows is None else rows
     as_path = Path(video).expanduser()
     resolved = (as_path if as_path.is_absolute() else Path.cwd() / as_path).resolve()
     for row in rows:

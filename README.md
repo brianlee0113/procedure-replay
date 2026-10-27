@@ -158,6 +158,7 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_*.py` | Scoring rule (detected / false flag / extra flags) + checks for scoring, judging, voting | day 1–2 |
 | `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth; per run, first pass vs re-check, and vote | day 1–2 |
+| `src/pr/server.py` | Local HTTP server for the iPhone app: Guides, expert step edits, recording upload (same license gate), Reviews | day 2 |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
 ## Third-party

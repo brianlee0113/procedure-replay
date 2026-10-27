@@ -22,6 +22,7 @@ data/manifest_app.csv
 results/*
 !results/summary.md
 !results/summary_dev.md
+!results/summary_dev_audio.md
 !results/*.png
 !results/checklists/
 results/checklists/*

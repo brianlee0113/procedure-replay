@@ -179,12 +179,19 @@ class MetaClient:
             )
             return r, time.time() - t0
 
-        r, latency = _retry(do)
-        u = r.usage
-        cached = (u.input_tokens_details.cached_tokens or 0) if u and u.input_tokens_details else 0
-        log_cost(model, purpose, video_id, input_tokens=u.input_tokens if u else 0,
-                 cached_tokens=cached, output_tokens=u.output_tokens if u else 0, latency_s=latency)
-        if not r.output_text:
-            raise RuntimeError(f"Muse Spark returned no text (status={r.status}, "
-                               f"incomplete={getattr(r, 'incomplete_details', None)})")
-        return json.loads(r.output_text)
+        # Muse Spark 1.2 once returned JSON cut off mid-object despite the schema; ask again (at most 3 tries).
+        for attempt in range(3):
+            r, latency = _retry(do)
+            u = r.usage
+            cached = (u.input_tokens_details.cached_tokens or 0) if u and u.input_tokens_details else 0
+            log_cost(model, purpose, video_id, input_tokens=u.input_tokens if u else 0,
+                     cached_tokens=cached, output_tokens=u.output_tokens if u else 0, latency_s=latency)
+            if not r.output_text:
+                raise RuntimeError(f"Muse Spark returned no text (status={r.status}, "
+                                   f"incomplete={getattr(r, 'incomplete_details', None)})")
+            try:
+                return json.loads(r.output_text)
+            except json.JSONDecodeError as e:
+                if attempt == 2:
+                    raise
+                print(f"  unparseable JSON from {model} ({e}); asking again")

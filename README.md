@@ -117,7 +117,8 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `src/pr/inject.py` | ffmpeg cut / swap flaw injection by keystep name, ground truth + attribution logging; refuses swaps a recipe allows | day 1 |
 | `scripts/import_indego.py` | Registers downloaded IndEgo videos: manifest, attribution, keystep labels, real-mistake labels | day 1 |
 | `scripts/import_captaincook.py` | Prints CaptainCook4D download commands; registers videos, step labels, recipe graph, real-error labels | day 1 |
-| `src/pr/align.py`, `src/pr/judge.py` | Align trainee timeline to checklist; flag missing / out-of-order | stub |
+| `src/pr/align.py` | Muse Spark reviews a trainee video against the reference checklist (done? when?), maps checklist steps to keysteps | day 1 |
+| `src/pr/judge.py`, `src/pr/order.py` | Missing / out-of-order flags; order rules from the recipe graph or learned from correct takes | day 1 |
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_score.py` | Scoring rule (detected / false flag) + checks | day 1 |
 | `scripts/run_eval.py` | Runs the pipeline over the manifest and scores it against ground truth | day 1 (stages stubbed) |

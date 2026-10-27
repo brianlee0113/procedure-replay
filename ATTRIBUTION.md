@@ -102,6 +102,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u14_r03_c_01
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_c_01_480.mp4
 - Edits:
+  - 2026-10-26: cut 99.9–116.6 s (removes step 3: add ram) → `22_u14_r03_c_01__cut_99.9-116.6`
 
 ### 22_u14_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u14_r03_c_02_480.mp4
@@ -134,6 +135,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u15_r03_c_01
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_01_480.mp4
 - Edits:
+  - 2026-10-26: cut 59.4–66.3 s (removes step 5: attach fan) → `22_u15_r03_c_01__cut_59.4-66.3`
 
 ### 22_u15_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u15, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u15_r03_c_02_480.mp4
@@ -158,6 +160,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 22_u16_r03_c_01
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_01_480.mp4
 - Edits:
+  - 2026-10-26: swapped 137.1–157.8 s with 161.2–237.9 s (steps 7,8 out of order) → `22_u16_r03_c_01__swap_137.1-157.8_161.2-237.9`
 
 ### 22_u16_r03_c_02
 - IndEgo Task 22 (Repairing a PC (install parts, clean, close, test)), participant u16, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_22/mp4_480/22_u16_r03_c_02_480.mp4
@@ -278,6 +281,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### 07_u14_r04_c_01
 - IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_01_480.mp4
 - Edits:
+  - 2026-10-26: cut 8.2–16.7 s (removes step 2: remove bit) → `07_u14_r04_c_01__cut_8.2-16.7`
 
 ### 07_u14_r04_c_02
 - IndEgo Task 7 (Changing a drill bit), participant u14, correct take · CC-BY-4.0 · https://huggingface.co/datasets/FraunhoferIPK/IndEgo/blob/main/Mistake_Detection/Task_7/mp4_480/07_u14_r04_c_02_480.mp4
@@ -401,6 +405,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### cc4d_22_6
 - CaptainCook4D recording 22_6 (Herb Omelet with Fried Tomatoes), person 7, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/nezy28ci1l6oibg0kys9k0t3omq18au8.mp4
 - Edits:
+  - 2026-10-26: cut 244.8–284.2 s (removes step 7: beat the contents of the bowl) → `cc4d_22_6__cut_244.8-284.2`
 
 ### cc4d_22_8
 - CaptainCook4D recording 22_8 (Herb Omelet with Fried Tomatoes), person 7, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/w8y6eio1w0nf4ftsvcqqe39nq8hah57f.mp4
@@ -413,6 +418,7 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 ### cc4d_22_13
 - CaptainCook4D recording 22_13 (Herb Omelet with Fried Tomatoes), person 6, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/1c7yfihqsp4a4vaah8jlyrcx98cj0eyi.mp4
 - Edits:
+  - 2026-10-26: swapped 250.4–280.4 s with 320.3–343.5 s (steps 7,8 out of order) → `cc4d_22_13__swap_250.4-280.4_320.3-343.5`
 
 ### cc4d_22_21
 - CaptainCook4D recording 22_21 (Herb Omelet with Fried Tomatoes), person 6, normal take · Apache-2.0 · https://utdallas.box.com/shared/static/y47lej77kqpjipe5lddjeitqw1s821tq.mp4

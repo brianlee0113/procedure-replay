@@ -3,7 +3,10 @@
 A flawed video counts as detected when at least one flag
 - has the right type (cut -> missing, swap -> out_of_order),
 - names one of the injected steps, and
-- has a timestamp within `tol` seconds of the injected flaw (cut: the splice point; swap: the moved span).
+- for a swap, has a timestamp within `tol` seconds of the moved span.
+A cut has no timestamp check: a step that never happens has no place in the video, and when the task allows
+several orders (PC repair: the five parts go in any order) there is no single "where it should have been".
+The missing flag's ts is when it should have been noticed (see pr.judge), which is what the Review shows.
 An unedited video is a false flag if it has any flag other than "ok".
 """
 
@@ -13,6 +16,8 @@ EXPECTED_TYPE = {"cut": "missing", "swap": "out_of_order"}
 def flag_matches(flag: dict, flaw: dict, tol: float) -> bool:
     if flag.get("type") != EXPECTED_TYPE[flaw["type"]] or flag.get("step") not in flaw["steps"]:
         return False
+    if flaw["type"] == "cut":
+        return True
     ts = flag.get("ts")
     return ts is not None and flaw["start_ts"] - tol <= ts <= flaw["end_ts"] + tol
 

@@ -1,7 +1,7 @@
 """Full pipeline over the manifest, scored against data/ground_truth.jsonl.
 
     uv run python scripts/run_eval.py                 # run missing stages (API calls), then score
-    uv run python scripts/run_eval.py --dry-run       # cached checklists/tracks only, no API calls
+    uv run python scripts/run_eval.py --dry-run       # cached checklists/reports only, no API calls
     uv run python scripts/run_eval.py --flags F.json  # score precomputed flags {video_id: [flag, ...]}
 
 Prints detected X/6, false flags Y/2, and a per-video table; writes results/summary.md.
@@ -12,13 +12,13 @@ import json
 import sys
 from datetime import datetime
 
-from pr.align import align
+from pr.align import align, keystep_of
 from pr.client import RESULTS, MetaClient
 from pr.judge import judge
 from pr.license_check import ROOT, LicenseError, load_manifest, local_path, require_allowed
+from pr.order import keystep_pairs
 from pr.score import score_video, summarize
 from pr.steps import CHECKLISTS, extract_steps, load_tasks
-from pr.track import TRACKS, track
 
 TARGET_DETECTED, TARGET_FLAWED, TARGET_CLEAN = 5, 6, 2
 
@@ -29,10 +29,12 @@ def load_ground_truth() -> list[dict]:
 
 
 class Pipeline:
-    """Runs (or loads from cache) checklist -> tracks -> align -> judge for one trainee video."""
+    """Runs (or loads from cache) checklist -> Muse Spark trainee report -> judge for one trainee video."""
 
-    def __init__(self, manifest: dict, dry_run: bool):
+    def __init__(self, manifest: dict, dry_run: bool, eval_ids: set[str]):
         self.manifest, self.dry_run = manifest, dry_run
+        # Order rules are learned from correct takes; never from a video under test or its source take.
+        self.exclude = eval_ids | {v.split("__")[0] for v in eval_ids}
         self.tasks = load_tasks()
         self._client = None
 
@@ -40,11 +42,6 @@ class Pipeline:
     def client(self) -> MetaClient:
         self._client = self._client or MetaClient()
         return self._client
-
-    def _cached_track(self, video_id: str, prompts: list[str]) -> dict | None:
-        path = TRACKS / f"{video_id}.json"
-        t = json.loads(path.read_text()) if path.exists() else None
-        return t if t and all(p in t["prompts"] for p in prompts) else None
 
     def checklist(self, task: str) -> dict | None:
         path = CHECKLISTS / f"{task}.json"
@@ -57,22 +54,16 @@ class Pipeline:
             raise RuntimeError(f"no reference video for task {task} in the manifest")
         return extract_steps(ref["video_id"], task, self.client)
 
-    def timeline(self, video_id: str, task: str) -> dict | None:
-        prompts = self.tasks[task]["object_prompts"]
-        cached = self._cached_track(video_id, prompts)
-        if cached or self.dry_run:
-            return cached
-        return track(video_id, prompts, self.client)
-
     def flags(self, video_id: str, task: str) -> tuple[list[dict], str]:
         checklist = self.checklist(task)
         if checklist is None:
             return [], "no cached checklist"
-        trainee = self.timeline(video_id, task)
-        ref = self.timeline(checklist["reference_video"], task)
-        if trainee is None or ref is None:
-            return [], "no cached tracks"
-        return judge(align(trainee, checklist, ref), checklist), ""
+        cfg = self.tasks[task]
+        matches = align(video_id, checklist, None if self.dry_run else self.client, cfg["name"])
+        if matches is None:
+            return [], "no cached report"
+        before = keystep_pairs(task, list(self.manifest.values()), self.exclude)
+        return judge(matches, keystep_of(checklist), cfg["keysteps"], before), ""
 
 
 def fmt_flaw(flaw: dict) -> str:
@@ -92,10 +83,11 @@ def main() -> int:
 
     manifest = {r["video_id"]: r for r in load_manifest()}
     given = json.loads(open(args.flags).read()) if args.flags else None
-    pipe = Pipeline(manifest, args.dry_run)
+    ground_truth = load_ground_truth()
+    pipe = Pipeline(manifest, args.dry_run, {gt["video_id"] for gt in ground_truth})
     rows, skipped = [], []
 
-    for gt in load_ground_truth():
+    for gt in ground_truth:
         vid = gt["video_id"]
         if given is None:
             try:

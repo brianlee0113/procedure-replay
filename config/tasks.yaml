@@ -77,3 +77,13 @@ camera_stand:
     - camera stand
     - camera
     - metal bar
+
+# Narrated first-person videos (YouTube, CC BY 3.0; ATTRIBUTION.md). No human step labels yet:
+# keysteps are added after the user labels the video (docs/B0_guide_eval_plan.md §3.4).
+restaurant_cooking:
+  name: Make a restaurant order (POV, narrated)
+  reference: yt_P-pHllvP0wo           # 10:36, head-cam, cook explains while working
+
+faucet_repair:
+  name: Fix a dripping faucet (POV, narrated)
+  reference: yt_LPwPomA7BfM           # 1:20, hands on the faucet, burned-in captions

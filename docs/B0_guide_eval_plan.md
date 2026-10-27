@@ -79,24 +79,37 @@ No video in these sets contains speech (checked 2026-10-27 with Muse Voice Trans
 
 ### 3.2 What we need to add (B1, in progress)
 
-- **Narrated videos, English only, existing footage** (no self-recording). Videos where the person
-  explains the task out loud, under CC0 / CC BY / CC BY-SA / Pexels / Pixabay / Apache-2.0 / MIT
-  (no NC, no ND). These have no human step labels, so we label them ourselves (section 3.4).
-  Shortlist found 2026-10-27 (licenses read on the page; narration and viewpoint not yet watched):
+- **Narrated videos, English only, existing footage, first-person only** (no self-recording).
+  Selection rule (2026-10-27): the camera is at the worker's eyes or chest with their hands doing the
+  task, as with smart glasses; the person doing the task explains it out loud in English; one task or
+  recipe; CC0 / CC BY / CC BY-SA / Pexels / Pixabay / Apache-2.0 / MIT (no NC, no ND). Third-person
+  cooking shows were dropped. These videos have no human step labels, so we label them ourselves
+  (section 3.4).
 
-  | Domain | Video | License | Length | Viewpoint |
-  |---|---|---|---|---|
-  | Cooking | Cooking with Laura: Homemade Pasta (Wikimedia Commons) | CC BY 3.0, Commons-reviewed | 11:10 | third person |
-  | Cooking | Making Shio Koji, Michael Vera (Wikimedia Commons) | CC BY 3.0 | 3:42 | third person |
-  | Cooking | How To Make Steamed Fish With Fermented Soy Beans (Wikimedia Commons) | CC BY 3.0, review pending | 4:57 | third person |
-  | Cooking | The Creamiest Mac and Cheese, Smokin' & Grillin with AB (YouTube) | CC BY (uploader's label) | 15:33 | third person + close-ups |
-  | Cooking | POV Restaurant Cooking #6, Abraham Moreno (YouTube) | CC BY (uploader's label) | 10:36 | **first person** |
-  | Repair | Repairing a punctured bicycle inner tube, sheldonbrown.com (YouTube) | CC BY (uploader's label) | 2:10 | hands close-up |
-  | Household | How to repot a plant, Garden Ninja (YouTube) | CC BY (uploader's label) | 7:22 | third person |
+  Chosen and downloaded (license re-checked with yt-dlp metadata; first-person checked on frames):
 
-  Most are third-person, unlike the glasses footage; the guide pipeline should not depend on the
-  viewpoint, and the results table will report viewpoint as a column. CC BY requires credit and a
-  "changes were made" note (demo credits, `ATTRIBUTION.md`).
+  | video_id | Domain | Video | Length |
+  |---|---|---|---|
+  | `yt_P-pHllvP0wo` | Cooking (restaurant) | POV Restaurant Cooking: Make this order with me #6, Abraham Moreno | 10:36 |
+  | `yt_LPwPomA7BfM` | Repair (plumbing) | Dripping Faucet Repair, The Old Corona (burned-in captions) | 1:20 |
+
+  Candidates under the same rule (CC BY label and English captions found; viewpoint inferred from 3
+  frames; not watched yet):
+
+  | Domain | Video | Length | Note |
+  |---|---|---|---|
+  | Cooking | POV Restaurant Cooking: The SCORCHER Burrito, Abraham Moreno — https://www.youtube.com/watch?v=jFQnSWX7tqs | 11:18 | step-by-step recipe |
+  | Cooking | POV Restaurant Cooking: Cucumber water, Abraham Moreno — https://www.youtube.com/watch?v=2mOy0TZFpBg | 17:39 | a drink; cut to < 15 min |
+  | Cooking (home) | EASY FRIED RICE, POV COOKING, Ghanzi — https://www.youtube.com/watch?v=U-nqknHm9hY | 5:14 | home stove, vertical video |
+  | Cooking (home) | How to make AguaChile, POV Cooking, Abraham Moreno — https://www.youtube.com/watch?v=JxvMxtewo3Q | 20:33 | long, needs a cut |
+  | Maintenance | GY6 50cc Full Oil Service, scooter POV, Oddspite rides — https://www.youtube.com/watch?v=YOnnEBwWII4 | 19:18 | chapters; e.g. 01:42–08:26 only |
+  | Plumbing | Inline PVC Pipe Repair, Ultra Plumbing & Drain Cleaning — https://www.youtube.com/watch?v=e4F572BB7W8 | 5:43 | burned-in captions |
+  | Electrical | POV Service Electrical: Range Install, Aesir Electric — https://www.youtube.com/watch?v=rYylNdLF3QA | 9:41 | weaker: less hands-on framing |
+  | Workshop | Sprocket Welding, Google Glass POV Test, Attoparsec — https://www.youtube.com/watch?v=Ff0Y2yo_8gQ | 16:51 | **filmed on Google Glass** |
+
+  No narrated first-person factory or assembly-line video under CC BY was found; the factory domain
+  stays on IndEgo (first-person, no speech). CC BY requires credit and a "changes were made" note
+  (`ATTRIBUTION.md`, demo credits).
 - **Optional: one assembly dataset.** IndustReal is Apache-2.0 but has no speech (segmentation only).
   HoloAssist is CDLA-Permissive-2.0 (commercial use and changes allowed) with instructor speech, but
   CDLA is not yet on our license list — a decision for the user.

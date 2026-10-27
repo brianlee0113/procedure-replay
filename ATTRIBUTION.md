@@ -1,7 +1,7 @@
 # Attribution
 
 Every video used by ProcedureReplay is listed here with its source, creator, and license.
-Only CC0, CC-BY, CC-BY-SA, Pexels, and Pixabay licenses are used (no ND, no NC).
+Only CC0, CC-BY, CC-BY-SA, Pexels, Pixabay and Apache-2.0 licenses are used (no ND, no NC).
 Videos are **not** stored in this repository; they are listed so anyone can fetch them from the source.
 
 Edits we made (cuts and swaps that inject a flaw for evaluation) are logged under each source video by
@@ -471,4 +471,28 @@ Edits we made (cuts and swaps that inject a flaw for evaluation) are logged unde
 
 ### cc4d_22_137
 - CaptainCook4D recording 22_137 (Herb Omelet with Fried Tomatoes), person 3, error take · Apache-2.0 · https://utdallas.box.com/shared/static/5q1xb15a777rbofcrz6g9d1bfvi5c410.mp4
+- Edits:
+
+### Narrated first-person videos (YouTube, CC BY)
+YouTube's "Creative Commons Attribution license (reuse allowed)" is CC BY 3.0
+(https://creativecommons.org/licenses/by/3.0/). We download at up to 720p, then re-encode and cut them;
+each derivative is under the same license and credits the creator below. The license is the uploader's own label
+on the watch page, checked on 2026-10-27.
+
+### yt_P-pHllvP0wo
+- Title: POV Restaurant Cooking | Make this order with me #6
+- Creator: Abraham Moreno, https://www.youtube.com/channel/UCFckCqA3lX4HNBG5qeZfizw
+- Source: https://www.youtube.com/watch?v=P-pHllvP0wo
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: head-mounted, first person; the cook explains while working (English). 10:36
+- Role: reference
+- Edits:
+
+### yt_LPwPomA7BfM
+- Title: Dripping Faucet Repair #diy #plumbing
+- Creator: The Old Corona, https://www.youtube.com/channel/UCG-kengk6TULY7hM8fU5eZw
+- Source: https://www.youtube.com/watch?v=LPwPomA7BfM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands on the faucet), with burned-in captions; English narration. 1:20
+- Role: reference
 - Edits:

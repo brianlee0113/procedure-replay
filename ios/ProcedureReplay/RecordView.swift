@@ -32,6 +32,7 @@ struct RecordView: View {
       .padding(.bottom, 8)
     }
     .environment(\.colorScheme, .dark)
+    .sensoryFeedback(.impact(weight: .medium), trigger: camera.isRecording)
     .task { await camera.connect() }
   }
 

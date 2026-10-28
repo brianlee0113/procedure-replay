@@ -10,17 +10,25 @@ struct RootView: View {
   @State private var flow: CreateFlow?
   @State private var openGuide: GuideLink?
   @State private var reload = 0
+  @State private var banner: String?
 
   var body: some View {
     ZStack(alignment: .bottom) {
       Group {
         switch tab {
-        case .feed: FeedView(reload: reload)
-        case .library: LibraryView(reload: reload)
+        case .feed: FeedView(reload: reload) { flow = CreateFlow() }
+        case .library:
+          LibraryView(reload: reload) { id in
+            Task { flow = await CreateFlow.resuming(guideId: id) }
+          }
         }
       }
       tabBar
     }
+    .overlay(alignment: .top) {
+      if let banner { Banner(text: banner).padding(.top, 8) }
+    }
+    .sensoryFeedback(.success, trigger: banner) { _, new in new != nil }
     .background(Color.canvas)
     .fullScreenCover(item: Binding(get: { flow.map(FlowBox.init) }, set: { flow = $0?.flow })) { box in
       CreateFlowView(flow: box.flow) { published in
@@ -28,6 +36,7 @@ struct RootView: View {
         if let published {  // show the new guide where it now lives
           tab = published.visibility == "public" ? .feed : .library
           reload += 1
+          show(published.visibility == "public" ? "Published to the Feed" : "Saved as a private guide")
         }
       }
     }
@@ -40,13 +49,47 @@ struct RootView: View {
       if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
         openGuide = GuideLink(id: id, autoplayStep: args.contains("--autorun-a4") ? 3 : nil)
       }
-      if args.contains("--autorun-a3") || args.contains("--autorun-a5") {
+      // `--open-draft=<id>` reopens a draft in the Draft editor, as tapping it in Library does.
+      if let id = args.first(where: { $0.hasPrefix("--open-draft=") })?.replacingOccurrences(of: "--open-draft=", with: "") {
+        flow = await CreateFlow.resuming(guideId: id)
+      }
+      if args.contains("--autorun-a3") || args.contains("--autorun-a5") || args.contains("--autorun-e2e") {
         let f = CreateFlow()
         flow = f
         await f.autorun()
         if args.contains("--autorun-a5") { await autorunAfterPublish(f) }
+        if args.contains("--autorun-e2e") { await autorunEndToEnd(f) }
       }
     }
+  }
+
+  private func show(_ text: String) {
+    withAnimation { banner = text }
+    Task {
+      try? await Task.sleep(for: .seconds(3))
+      withAnimation { banner = nil }
+    }
+  }
+
+  /// `--autorun-e2e`: the whole demo path. Publish as Public, land on the Feed, open the new guide, play
+  /// step 1 and step 2, close, show the Library, and write Documents/e2e_result.json.
+  private func autorunEndToEnd(_ f: CreateFlow) async {
+    await f.autorunPublish()
+    try? await Task.sleep(for: .seconds(4))
+    guard let id = f.published?.guideId else { return }
+    openGuide = GuideLink(id: id, autoplayStep: 1)
+    try? await Task.sleep(for: .seconds(14))
+    let guide = try? await API.guide(id)
+    openGuide = nil
+    try? await Task.sleep(for: .seconds(1))
+    tab = .library
+    try? await Task.sleep(for: .seconds(3))
+    let mine = (try? await API.library())?.mine.first { $0.guideId == id }
+    let result: [String: Any] = ["guide_id": id, "visibility": mine?.visibility ?? "none",
+                                 "progress_after_player": guide?.progress ?? 0, "steps": guide?.guide.steps.count ?? 0]
+    let out = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("e2e_result.json")
+    try? JSONSerialization.data(withJSONObject: result, options: .prettyPrinted).write(to: out)
   }
 
   /// `--autorun-a5`: after publishing, check the guide is in the Feed and in My guides, then show Library.
@@ -130,7 +173,12 @@ struct CreateFlowView: View {
         VStack(spacing: 16) {
           Image(systemName: "exclamationmark.triangle").font(.largeTitle).foregroundStyle(Color.live)
           Text(message).multilineTextAlignment(.center).foregroundStyle(Color.ink)
-          Button("Close", action: close).buttonStyle(.glass)
+          HStack {
+            Button("Close", action: close).buttonStyle(.glass)
+            if flow.guide == nil {
+              Button("Record again") { flow.startOver() }.buttonStyle(.glassProminent).tint(Color.ink)
+            }
+          }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

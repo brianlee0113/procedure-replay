@@ -59,3 +59,40 @@ func clock(_ seconds: Double) -> String {
   let s = max(0, Int(seconds.rounded()))
   return String(format: "%d:%02d", s / 60, s % 60)
 }
+
+/// Empty, loading-failed and "nothing here yet" screens: what happened, and the one thing to do next.
+struct StateMessage: View {
+  let symbol: String
+  let title: String
+  let message: String
+  var actionTitle: String?
+  var action: (() -> Void)?
+
+  var body: some View {
+    VStack(spacing: 10) {
+      Image(systemName: symbol).font(.system(size: 30, weight: .regular)).foregroundStyle(Color.inkSecondary)
+      Text(title).font(.headline).foregroundStyle(Color.ink)
+      Text(message).font(.callout).foregroundStyle(Color.inkSecondary).multilineTextAlignment(.center)
+      if let actionTitle, let action {
+        Button(actionTitle, action: action).buttonStyle(.glassProminent).tint(Color.ink).padding(.top, 4)
+      }
+    }
+    .frame(maxWidth: .infinity)
+    .padding(.vertical, 40)
+    .padding(.horizontal, 24)
+  }
+}
+
+/// Shown briefly at the top after something finishes elsewhere (e.g. "Published to the Feed").
+struct Banner: View {
+  let text: String
+
+  var body: some View {
+    Label(text, systemImage: "checkmark.circle.fill")
+      .font(.subheadline.weight(.semibold))
+      .foregroundStyle(Color.ink)
+      .padding(.horizontal, 16).padding(.vertical, 10)
+      .glassEffect(.regular, in: .capsule)
+      .transition(.move(edge: .top).combined(with: .opacity))
+  }
+}

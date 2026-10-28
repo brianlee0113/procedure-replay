@@ -4,6 +4,8 @@ import SwiftUI
 
 struct LibraryView: View {
   let reload: Int
+  /// Opens a draft in the Draft editor, so the instructor can keep editing and publish it.
+  var openDraft: (String) -> Void = { _ in }
 
   @State private var library: Library?
   @State private var error: String?
@@ -15,7 +17,10 @@ struct LibraryView: View {
         VStack(alignment: .leading, spacing: 14) {
           Text("Library").font(.largeTitle.bold()).foregroundStyle(Color.ink)
           if let error {
-            Text(error).font(.callout).foregroundStyle(Color.inkSecondary)
+            StateMessage(symbol: "wifi.exclamationmark", title: "Can't reach the Mac server", message: error,
+                         actionTitle: "Try again") { Task { await load() } }
+          } else if library == nil {
+            ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
           }
           if let library {
             ForEach(library.continue) { card in
@@ -38,7 +43,9 @@ struct LibraryView: View {
               Text("Guides you record appear here.").font(.callout).foregroundStyle(Color.inkSecondary)
             }
             ForEach(library.mine) { card in
-              Button { opened = OpenedGuide(card: card, step: nil) } label: { MineRow(card: card) }.buttonStyle(.plain)
+              Button {
+                if card.visibility == "draft" { openDraft(card.guideId) } else { opened = OpenedGuide(card: card, step: nil) }
+              } label: { MineRow(card: card) }.buttonStyle(.plain)
             }
           }
         }
@@ -49,8 +56,9 @@ struct LibraryView: View {
       .background(Color.canvas)
       .refreshable { await load() }
       .task(id: reload) { await load() }
-      .navigationDestination(item: $opened) { o in
-        GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step)
+      // Full screen, so the tab bar doesn't float over the guide.
+      .fullScreenCover(item: $opened) { o in
+        NavigationStack { GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step) }
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }
     }
@@ -70,15 +78,17 @@ struct LibraryView: View {
       library = try await API.library()
       error = nil
     } catch {
-      self.error = "Couldn't load your Library. Is the Mac server running at \(API.base.absoluteString)?"
+      self.error = "Start the server on your Mac (uv run uvicorn pr.server:app --port 8000), then try again. Looking for it at \(API.base.absoluteString)."
     }
   }
 }
 
-private struct OpenedGuide: Hashable {
+private struct OpenedGuide: Hashable, Identifiable {
+  var id: String { card.guideId }
   let card: GuideCard
   let step: Int?
 }
+
 
 struct ContinueCard: View {
   let card: GuideCard

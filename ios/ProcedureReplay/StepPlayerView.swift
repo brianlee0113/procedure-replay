@@ -13,7 +13,8 @@ struct StepPlayerView: View {
   init(guide: Guide, startIndex: Int) {
     self.guide = guide
     _index = State(initialValue: startIndex)
-    autorun = ProcessInfo.processInfo.arguments.contains("--autorun-a4")
+    let args = ProcessInfo.processInfo.arguments
+    autorun = args.contains("--autorun-a4") || args.contains("--autorun-e2e")
   }
 
   private var step: GuideStep { guide.steps.first { $0.index == index } ?? guide.steps[0] }

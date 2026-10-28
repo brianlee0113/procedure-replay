@@ -29,6 +29,27 @@ final class CreateFlow {
     ("write", "Writing the instructions", "A title, a summary and one instruction per step"),
   ]
 
+  /// Reopens a saved draft (from Library → My guides) straight in the Draft editor.
+  static func resuming(guideId: String) async -> CreateFlow {
+    let flow = CreateFlow()
+    do {
+      flow.guide = try await API.guide(guideId)
+      flow.phase = .draft
+    } catch {
+      flow.phase = .failed("Couldn't open this draft: \(error.localizedDescription)")
+    }
+    return flow
+  }
+
+  /// After a failure: back to the viewfinder for a new recording.
+  func startOver() {
+    job = nil
+    guide = nil
+    marks = []
+    thumbnail = nil
+    phase = .record
+  }
+
   func toggleRecording() async {
     if camera.isRecording {
       await finishRecording()

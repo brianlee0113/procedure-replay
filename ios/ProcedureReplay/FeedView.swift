@@ -4,11 +4,13 @@ import SwiftUI
 
 struct FeedView: View {
   let reload: Int
+  var startRecording: () -> Void = {}
 
   @State private var cards: [GuideCard] = []
   @State private var categories: [(id: String, label: String)] = []
   @State private var selected: String?
   @State private var error: String?
+  @State private var loaded = false
   @State private var opened: GuideCard?
 
   var body: some View {
@@ -25,11 +27,17 @@ struct FeedView: View {
             }
           }
           if let error {
-            Text(error).font(.callout).foregroundStyle(Color.inkSecondary)
+            StateMessage(symbol: "wifi.exclamationmark", title: "Can't reach the Mac server", message: error,
+                         actionTitle: "Try again") { Task { await load() } }
+          } else if !loaded {
+            ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
+          } else if cards.isEmpty && selected != nil {
+            StateMessage(symbol: "square.grid.2x2", title: "Nothing here yet",
+                         message: "No public guides in this category yet.", actionTitle: "Show all") { selected = nil }
           } else if cards.isEmpty {
-            Text(selected == nil ? "No public guides yet. Record one and publish it as Public."
-                                 : "No public guides in this category yet.")
-              .font(.callout).foregroundStyle(Color.inkSecondary).padding(.top, 20)
+            StateMessage(symbol: "video.badge.plus", title: "No public guides yet",
+                         message: "Record a job with your glasses and publish it as Public. It will show up here.",
+                         actionTitle: "Record a guide", action: startRecording)
           }
           ForEach($cards) { $card in
             FeedCard(card: $card) { opened = card }
@@ -42,8 +50,9 @@ struct FeedView: View {
       .background(Color.canvas)
       .refreshable { await load() }
       .task(id: "\(reload)-\(selected ?? "all")") { await load() }
-      .navigationDestination(item: $opened) { card in
-        GuideView(model: GuideModel(guideId: card.guideId))
+      // Full screen, so the tab bar doesn't float over the guide.
+      .fullScreenCover(item: $opened) { card in
+        NavigationStack { GuideView(model: GuideModel(guideId: card.guideId)) }
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }  // likes may have changed
     }
@@ -53,9 +62,10 @@ struct FeedView: View {
     do {
       cards = try await API.feed(category: selected)
       error = nil
+      loaded = true
       if categories.isEmpty { categories = (try? await API.categories()) ?? [] }
     } catch {
-      self.error = "Couldn't load the Feed. Is the Mac server running at \(API.base.absoluteString)?"
+      self.error = "Start the server on your Mac (uv run uvicorn pr.server:app --port 8000), then try again. Looking for it at \(API.base.absoluteString)."
     }
   }
 }

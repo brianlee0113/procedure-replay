@@ -1,7 +1,9 @@
-# B0 — Guide contract v1 and evaluation plan (draft for review)
+# B0 — Guide contract v1 and evaluation plan (draft v4)
 
-Status: draft, 2026-10-27. Nothing here is implemented yet. Written to be reviewed (Codex review #1)
-before any code or API call.
+Status: draft v4, 2026-10-28, after Codex review #3. Nothing here is implemented yet. Changes are listed
+in sections 9 (v3 → v4), 10 (v2 → v3) and 11 (v1 → v2). Order of work: fix splits, label groups and
+the primary metric (sections 3–4) → check and secure narrated dev/test videos (3.2) → make the
+contract code changes (2) → run the B2 baseline.
 
 ## 1. What changed and what B0 must decide
 
@@ -25,8 +27,13 @@ B0 decides: (a) the guide JSON contract the app will consume, (b) the metrics, (
 
 ## 2. Guide JSON contract v1
 
-One file per guide, produced by the AI track, consumed unchanged by the app (track A). Server-side
-fields (author, visibility, likes, saves) are **not** part of this contract.
+One `guide.json` per guide, produced by the AI track, validated by the `Guide` model
+(`src/pr/guides.py`) and served by the server. The guide holds **times, not media files**: the server
+cuts each step's loop clip and cover from the licensed source video on request and adds `clip_url` and
+`cover_url` to every step (`GET /guides/{id}`, `src/pr/server.py`). This is what lets an instructor's
+Draft edit of a step's start/end re-cut its clip without re-running the model. The app (track A) reads
+the server's response, never the source video. Server-side fields (author, visibility, likes, saves) are
+**not** part of this contract.
 
 ```json
 {
@@ -51,42 +58,79 @@ fields (author, visibility, likes, saves) are **not** part of this contract.
       "clip": {"start_s": 5.2, "end_s": 32.5},
       "cover_s": 18.0,
       "key_objects": ["computer case"],
-      "quote": {"text": "verbatim instructor sentence or null", "start_s": 12.4} ,
+      "quote": {"text": "verbatim instructor words", "turn_ids": [4], "start_s": 12.4, "end_s": 15.9},
       "on_screen_text": ["DDR4 8GB"]
     }
   ],
-  "inputs_used": {"video": true, "transcript": true, "on_screen_text": true},
+  "inputs_provided": {"video": true, "transcript": true, "on_screen_text": true},
   "provenance": {"model": "muse-spark-1.3-contributor", "transcriber": "muse-voice-transcribe-1.0",
+                 "transcript_id": "results/transcripts/<video_id>.json",
                  "prompt_version": "string", "created_at": "ISO-8601", "est_usd": 0.0}
 }
 ```
 
-Rules: steps are in time order and do not overlap; `clip` may pad the step by ≤1 s each side and is
-what the app loops; `quote` is either null or a sentence that exists in the transcript (never
-paraphrased); `category` comes from a fixed taxonomy (section 4.3).
+Rules:
+- Steps are in time order and **do not overlap** (the app loops one clip at a time). Real work can
+  overlap (the omelet labels have the egg cracked while tomatoes cook); the evaluation tolerates that
+  (section 4.1), the contract does not.
+- `clip` pads the step by ≤ 1 s each side (`CLIP_PAD_S`) and must contain `[start_s, end_s]`; it is
+  the range the server cuts and the app loops. `cover_s` lies inside the step.
+- `quote` is null or words that appear verbatim in the transcript turns `turn_ids`: consecutive turns,
+  **numbered from 0** by their position in `turns` of the transcript file. The prompt shows each turn
+  with that number (`#4 [00:12–00:15] …`), so the model can cite it. Muse Voice Transcribe gives no word
+  timestamps, so `start_s`/`end_s` are the bounds of those turns.
+- `inputs_provided` records what was **given** to the model; it does not claim the model used it. Use
+  is measured by the ablation in 4.4.
+- `category` comes from a fixed taxonomy (section 4.3).
+
+**Code changes to make before B2 output exists** (the contract above is the target; today's code has
+the v0 fields):
+- `src/pr/guides.py` `Guide` model: `Quote` gains `end_s` and `turn_ids`; `inputs_used` →
+  `inputs_provided`. The validator checks, per step:
+  `0 ≤ clip.start_s ≤ start_s < end_s ≤ clip.end_s ≤ duration_s`, padding ≤ `CLIP_PAD_S` on each side,
+  `start_s ≤ cover_s ≤ end_s`, indexes 1, 2, 3, … in order, and steps not overlapping.
+- **Transcript check, separate from the model** (it needs the transcript file named in
+  `provenance.transcript_id`): every `turn_ids` entry exists and the turns are consecutive, the quote
+  text matches them (4.4), and the turns lie inside the clip. Run by the B2 builder before saving and
+  by the evaluator.
+- **Stored guides** (`results/app/guides/`, not in git): all six today (`seed_*` and three `g_*` from
+  test uploads) carry `inputs_used` in `guide.json` and `model.json`. None is real model output (all
+  come from `from_checklist`), so they are **deleted and regenerated**, not migrated: seeds by re-running
+  `scripts/seed_guides.py`, `g_*` by re-running `tests/test_guides_api.py`. The model refuses the old
+  fields rather than silently mapping them.
+- `from_checklist` writes the new fields; `tests/test_guides_api.py` asserts the new contract
+  (`inputs_provided`, `quote` shape, validator failures on a bad clip and a bad cover).
+- `ios/ProcedureReplay/API.swift`: `Quote` and the guide struct follow the same fields.
+- `src/pr/transcribe.py` `context_block`: prefix each turn with `#<index>`.
+- **B2 dependency:** `build_guide` in `src/pr/server.py` is still `checklist_builder`, which returns the
+  committed checklist for the task. B2 replaces it with the real builder, which runs on the uploaded
+  recording; `source_video_id` must name that recording (and pass the license gate), not the dataset's
+  reference video.
 
 ## 3. Data and splits
 
 ### 3.1 What we have (human step labels with start/end seconds, `data/keysteps/`)
 
-| Domain | Source | Labelled takes | Participants | Narration |
+| Domain | Source | Labelled takes | Participants (takes) | Narration |
 |---|---|---|---|---|
-| Factory: PC repair (9 steps, ~2–8 min) | IndEgo Task 22, CC BY 4.0 | 15 correct + 31 with mistakes | 5 (correct takes) | none |
-| Factory: drill bit (5 steps, ~1 min) | IndEgo Task 7, CC BY 4.0 | 22 correct + 21 with mistakes | 6 | none |
-| Home cooking: herb omelet (15 steps, ~12–30 min) | CaptainCook4D, Apache-2.0 | 17 (6 normal, 11 with mistakes) | — | none |
+| Factory: PC repair (9 steps, ~2–8 min) | IndEgo Task 22, CC BY 4.0 | 15 correct + 31 with mistakes | u01 (12), u02 (6, mistakes only), u14 (8), u15 (6), u16 (6), u17 (8) | none |
+| Factory: drill bit (5 steps, ~1 min) | IndEgo Task 7, CC BY 4.0 | 22 correct + 21 with mistakes | u01 (8), u02 (8), u14 (8), u15 (7), u16 (6), u17 (6) | none |
+| Home cooking: herb omelet (15 steps, ~12–30 min) | CaptainCook4D, Apache-2.0 | 17 (6 normal, 11 with mistakes) | person 1 (4), 3 (4, mistakes only), 6 (5), 7 (4) — `manifest.csv` | none |
 
 No video in these sets contains speech (checked 2026-10-27 with Muse Voice Transcribe, ~57 min).
 
-### 3.2 What we need to add (B1, in progress)
+A take "with mistakes" is still a valid segmentation target: its labels describe what the person
+actually did, and the guide is judged against that.
 
-- **Narrated videos, English only, existing footage, first-person only** (no self-recording).
-  Selection rule (2026-10-27): the camera is at the worker's eyes or chest with their hands doing the
-  task, as with smart glasses; the person doing the task explains it out loud in English; one task or
-  recipe; CC0 / CC BY / CC BY-SA / Pexels / Pixabay / Apache-2.0 / MIT (no NC, no ND). Third-person
-  cooking shows were dropped. These videos have no human step labels, so we label them ourselves
-  (section 3.4).
+### 3.2 Narrated videos (B1, in progress)
 
-  Chosen and downloaded (license re-checked with yt-dlp metadata; first-person checked on frames):
+- **English only, existing footage, first-person only** (no self-recording). Selection rule
+  (2026-10-27): the camera is at the worker's eyes or chest with their hands doing the task, as with
+  smart glasses; the person doing the task explains it out loud in English; one task or recipe;
+  CC0 / CC BY / CC BY-SA / Pexels / Pixabay / Apache-2.0 / MIT (no NC, no ND). Third-person cooking
+  shows were dropped. These videos have no human step labels, so we label them ourselves (3.4).
+
+  Downloaded (license re-checked with yt-dlp metadata; first-person checked on frames):
 
   | video_id | Domain | Video | Length |
   |---|---|---|---|
@@ -94,7 +138,7 @@ No video in these sets contains speech (checked 2026-10-27 with Muse Voice Trans
   | `yt_LPwPomA7BfM` | Repair (plumbing) | Dripping Faucet Repair, The Old Corona (burned-in captions) | 1:20 |
 
   Candidates under the same rule (CC BY label and English captions found; viewpoint inferred from 3
-  frames; not watched yet):
+  frames; speech and picture not checked yet):
 
   | Domain | Video | Length | Note |
   |---|---|---|---|
@@ -110,57 +154,170 @@ No video in these sets contains speech (checked 2026-10-27 with Muse Voice Trans
   No narrated first-person factory or assembly-line video under CC BY was found; the factory domain
   stays on IndEgo (first-person, no speech). CC BY requires credit and a "changes were made" note
   (`ATTRIBUTION.md`, demo credits).
+
+- **Narrated split (by creator, so no creator is in both):**
+
+  | Split | Cooking | Repair |
+  |---|---|---|
+  | dev | Ghanzi, EASY FRIED RICE (candidate; to download and check) | `yt_LPwPomA7BfM`, The Old Corona |
+  | test | `yt_P-pHllvP0wo`, Abraham Moreno | Ultra Plumbing, Inline PVC Pipe Repair (candidate; to download and check) |
+
+  All other Abraham Moreno videos stay out of dev. **Before B2, all four videos are checked for real
+  speech (transcribed), first-person picture (watched, not 3 frames) and license.** A video that fails
+  is replaced by another creator's video under the same rule. The transcript → guide path must run end
+  to end on the dev videos before B2 counts as started.
+
+  With one test video per domain, narrated test results are reported as **case results** (per video,
+  with what went wrong), not as a domain accuracy figure.
+
+- **Claim limit.** None of these was filmed on Meta glasses, and we do not record our own. Results show
+  that the model builds guides from **first-person narrated work video**; they do not show the
+  glasses capture flow. The capture path is covered only by the iOS spike (mock glasses stream), and
+  the demo and write-up say so.
 - **Optional: one assembly dataset.** IndustReal is Apache-2.0 but has no speech (segmentation only).
   HoloAssist is CDLA-Permissive-2.0 (commercial use and changes allowed) with instructor speech, but
   CDLA is not yet on our license list — a decision for the user.
 
-### 3.3 Splits
+### 3.3 Exposure in earlier work and the splits
 
-- Split by **participant**, not by take, so the same person's style never appears in both dev and test.
-  - PC repair: dev = u14, u15; test = u01, u16, u17 (reference take u17_r03_c_01 stays in test only as
-    an input, never used for prompt tuning).
-  - Drill bit: dev = u14, u15, u16; test = u01, u02, u17.
-  - Omelet: no participant IDs in our labels; split by take, normal takes 3 dev / 3 test, takes with
-    mistakes used only for segmentation metrics (dev).
-  - Narrated set: too small to split; treated as **test-only showcase**, with one extra narrated video
-    held for dev if we find enough.
-- Test is run **once**, at B4, with the frozen configuration. Everything in B2–B3 uses dev only.
+Every video sent to a model so far (`data/ground_truth*.jsonl`, `data/proxy/`, `results/`), by participant:
 
-### 3.4 Labelling the narrated videos
+| Exposure | Meaning | PC repair | Drill bit | Omelet |
+|---|---|---|---|---|
+| reference | step prompts and guides were built on it | u17 | u01 | person 6 |
+| old dev | review prompts were tuned on it | u01, u15, u16, u17 | u02, u15, u16, u17 | person 1 |
+| old eval | used in earlier evaluations, never in guide or step-prompt tuning | u14 | u14 | person 7 |
+| never sent | no model call found for any take (logs, proxies, results) | u02 | — | person 3 |
 
-For each narrated video: one person (the user) marks step start/end seconds and a short step name,
-watching at 1×, before any model output is seen. Claude may prepare a blank template (video duration,
-transcript with timestamps) but does not propose boundaries, to avoid anchoring the labels on the model.
+"Old eval" is not a single frozen run: the old test set was scored by two pipelines (README, test-set
+history), and `results/costs.csv` has repeated review and re-check calls on `22_u14_r03_c_01`,
+`07_u14_r04_c_01` and `cc4d_22_6`; `cc4d_22_6` was also used in the SAM tracking trial, and `cc4d_22_8`
+was viewed when picking the reference. The new guide prompt has never seen them.
+
+Rule: a participant with any **reference** or **old dev** exposure is dev-only. Test participants come
+from "never sent" first, then "old eval".
+
+| Task | dev participants | test participants |
+|---|---|---|
+| PC repair | u01, u15, u16, u17 | u02 (never sent; mistake takes only), u14 (old eval) |
+| Drill bit | u01, u02, u15, u16, u17 | u14 (old eval) |
+| Omelet | person 1, person 6 | person 3 (never sent; mistake takes only), person 7 (old eval) |
+| Narrated | 3.2 | 3.2 |
+
+Reporting on test:
+- **Never sent and old eval are reported separately**, and **correct and mistake takes separately**
+  (PC u02 and omelet person 3 have only mistake takes, so they say nothing about correct takes).
+- Drill bit has no never-sent participant. Its test number is reported as **"held out from guide
+  tuning, used in earlier evaluations"** and is not presented as an independent test.
+- The test as a whole is exploratory: a few participants per task, one annotator per dataset.
+- During B2–B3, leave-one-participant-out on dev is allowed as a cross-check (report per-participant
+  numbers). Test participants stay out of every run until B4.
+- Test is run **once**, at B4, with the frozen configuration.
+
+### 3.4 Labelling the narrated videos and the label groups
+
+**Narrated labels.** For each narrated video: one person (the user) marks step start/end seconds and a
+short step name, watching at 1×, before any model output is seen. Claude may prepare a blank template
+(video duration, transcript with timestamps) but does not propose boundaries, to avoid anchoring the
+labels on the model. Labels for dev videos are made before B2; for test videos, before B4.
+
+**Label units** are fixed before B2 from the labels and the step text only, never from model output,
+and the user approves them. Two label sets per video:
+- **Fine units** (primary metric). Labels whose start and end are identical **in that video** become one
+  unit; nothing else is merged. This is computed per video, not per task: the omelet "scoop the
+  tomatoes" + "put tomatoes on a serving plate" are identical in 7 of 17 takes (one unit there) and only
+  partly overlap in 4 (two units there). Partly overlapping or concurrent labels (the egg cracked while
+  the tomatoes cook) stay separate. A unit made of several labels is matched only by a step whose text
+  describes **all** of its actions (the labels give no way to tell them apart in time).
+- **Coarse units** (secondary metric). `data/label_groups/<task>.json` lists `allowed_merges`, a fixed
+  set of **disjoint** groups of steps a good guide may reasonably show as one (e.g., omelet "add the
+  chopped cilantro" + "add 1/2 tsp ground black pepper"; "stop stirring" + "transfer omelette"). In each
+  video, a group is merged **only if all its labels exist in that video and are adjacent** there (no
+  other label starts between them in time order); otherwise its labels stay as fine units. This covers
+  mistake takes with a step left out and takes with steps swapped. A merged unit's interval runs from
+  the earliest start to the latest end of its labels, and it counts as **one** unit. The rule is
+  applied mechanically by the evaluator, never chosen after seeing a prediction.
 
 ## 4. Metrics
 
 ### 4.1 Segmentation (all labelled videos)
 
-Align predicted steps to human steps with an **order-preserving** alignment (dynamic programming over
-temporal IoU), because a guide's steps are ordered.
+**Primary: step hit F1 on fine units.** A predicted step *p* hits a fine unit *g* when all three hold:
+1. **Overlap** — *p* covers ≥ 50% of *g*'s interval. (Only these pairs go to the judge.)
+2. **Same action** — the judge (4.2) says *p*'s title and instruction describe *g*'s action (all of
+   them, for a multi-label unit).
+3. **Not too long** — *p*'s clip is ≤ max(2 × |g|, |g| + 6 s). The `+ 6 s` term is for short steps:
+   drill labels have a median of 5.9 s and 103 of 199 are ≤ 6 s, so 1 s padding plus a little slack
+   would otherwise fail on length alone. (Median label length: PC 10.9 s, omelet 23.9 s.)
 
-- **Step recall / precision / F1** at temporal IoU ≥ 0.3 (one-to-one).
-- **Coverage recall (merge-tolerant):** a human step counts as covered if one predicted step covers
-  ≥ 50% of it. Reported next to strict recall because label granularity differs (the omelet has 15
-  fine steps; a good guide may merge "add cilantro" and "add pepper").
-- **Granularity ratio:** predicted step count / human step count.
-- **Boundary error:** median |Δstart| and |Δend| in seconds over matched steps, plus the same divided by
-  the human step length.
-- **Clip usefulness:** share of human steps whose matched clip covers ≥ 70% of the human interval and is
-  ≤ 2× its length (a clip a trainee can loop without hunting).
+Hits are matched one-to-one (maximum bipartite matching over hit pairs). Recall = matched fine units /
+fine units; precision = matched predicted steps / predicted steps. Each predicted step and each unit is
+used at most once, so one long step earns at most one true positive, however many labels it covers.
+Reported per domain, and per video for the paired comparison in section 5.
+
+The length cap does not stop a long omelet step from containing other work (2 × a multi-minute label is
+long). That is measured separately, not by failing the hit, because concurrent work (the egg cracked
+while the tomatoes cook) and waiting that is part of the job (the pan heating) are normal:
+
+Secondary:
+- **Clip focus** (matched steps): the judge answers whether the clip contains a stretch of ≥ 10 s that
+  belongs to a **different, non-concurrent** labelled step (a label that does not overlap *g* in time).
+  Reported as the share of matched clips without such a stretch. Concurrent labels and waiting inside
+  *g*'s own interval never count against it.
+- **Merge-tolerant hit F1:** the same rule on coarse units (3.4). For a merged unit the judge must
+  confirm that the text and the clip contain **each** of its actions; the length cap uses the merged
+  interval.
+- **Length ratio:** clip length / matched unit length, median and max per domain.
+- **Temporal IoU F1** at IoU ≥ 0.3, one-to-one, no semantic check (comparable with the uniform baseline).
+- **Order agreement:** Kendall τ between predicted and label order over matched steps, ignoring pairs of
+  labels that overlap in time.
+- **Granularity ratio:** predicted step count / label unit count.
+- **Boundary error:** median |Δstart| and |Δend| in seconds over matched steps, and divided by label length.
 
 ### 4.2 Instruction quality (matched steps)
 
 Rubric, each item 0/1, per step:
-1. Action matches what the hands do (judged against the human step label and the clip).
+1. Action matches what the hands do.
 2. Key objects are correct; no object or tool that is not in the clip.
 3. `done_when` is observable in the clip and correct.
 4. Instruction is actionable for a first-timer (imperative, specific, ≤ 2 sentences).
 
-Scoring: an LLM judge scores all steps from the human label, the guide step and 3 frames from the clip;
-the user hand-scores a random 20% sample and we report judge–human agreement. **Open question for
-review:** which judge model (Muse Spark judging its own output risks self-preference; a different model
-costs more and adds a dependency).
+**Judge input:** the whole step clip (video), the transcript turns inside the clip, the human label, and
+the guide step. The same call answers "same action" and "clip focus" for 4.1.
+
+**Judge model:** open (section 8). A model other than Muse Spark avoids self-preference but adds cost and
+a dependency; either way the human check below is required.
+
+**Human check** (test only, run 1 of the frozen configuration). The user scores items **blind to
+configuration and model** (shuffled, no run IDs). The sample covers the matching, not only matched
+steps, so false matches and misses are checked too:
+
+| Domain | Sample |
+|---|---|
+| PC, drill, omelet (each) | 20 items from the main configuration: 10 judge-accepted pairs, 5 judge-rejected pairs (overlap ≥ 50% but "same action" said no), 5 unmatched predicted steps; plus 5 accepted pairs from "uniform + captions" (section 5), mixed in blind |
+| Narrated cooking, narrated repair | **every** step of the one test video, all candidate pairs, main configuration |
+| Metadata (4.3) | every test guide (title, summary, category; about 32 guides) |
+
+Drawing: random, fixed seed. If a category has fewer items than its quota, all of them are taken and
+the rest is filled from the other categories of the same domain (accepted first). **The actual number
+of items per category is recorded** and shown next to every agreement figure.
+
+Unmatched predicted steps: the user sees the step's clip and text, the labels that overlap it in time
+(any overlap) and the video's full label list, and answers whether one of those labels is the same
+action. A "yes" is a miss by the judge or the overlap rule, and is reported as such.
+
+What is scored on which item: "same action" on every pair and every unmatched step; "clip focus" and
+the 4 rubric items on accepted pairs only (a smaller denominator, e.g. 10 + 5 baseline).
+
+Rule, per domain and per judged item, on **that item's actual count n**: agreement is reported as a count
+(e.g. "same action 18/20", "done_when 9/10"). If disagreement is ≥ 15% of n, more items are drawn the same
+way, as many as are available up to n again. If disagreement is still ≥ 15% of the enlarged count, that
+metric is shown for that domain as **"verification incomplete"**, with the user's scores on the sampled
+items next to it; it is not replaced by a sample score or reported as a domain number. The user's
+score is final on every disagreement (one annotator; stated as a limitation).
+
+The human check is done on **run 1** of the 3 test runs only. Every test table that shows a 3-run mean
+says so next to the judged metrics.
 
 ### 4.3 Guide metadata
 
@@ -172,11 +329,17 @@ costs more and adds a dependency).
 
 ### 4.4 Narration use (narrated videos only)
 
-- **Quote fidelity:** every non-null `quote` must match a transcript sentence (normalized edit similarity
-  ≥ 0.9) and its time must fall inside the step's clip. Target: 100% — a fabricated quote is a hard
-  failure because the app shows it as the instructor's words.
-- **Narration lift (ablation):** the same metrics with and without the transcript in the prompt. The
-  demo claim "the model uses what the instructor says" needs this to be positive.
+- **Quote fidelity:** every non-null `quote` appears in its `turn_ids` (normalized edit similarity ≥ 0.9
+  against a span of those turns) and those turns lie **inside** the step's clip (± 1 s), so the words
+  the app shows are heard in the clip it loops. Target 100% — the app shows it as the instructor's
+  words, so a fabricated quote is a hard failure.
+- **Quote rate:** share of steps with a non-null quote, reported next to fidelity (all-null quotes
+  would pass fidelity trivially).
+- **Narration ablation:** the same metrics with and without the transcript in the prompt. With 4
+  narrated videos this is reported **per video** (delta per metric, mean and range over 3 runs) with the
+  failure cases written out, not as a pass/fail. Both repair videos have burned-in captions, so removing
+  the transcript leaves the words on screen: there it measures the **added effect of the transcript
+  text**, not the effect of narration as such.
 
 ### 4.5 Reliability and cost
 
@@ -184,17 +347,30 @@ costs more and adds a dependency).
   review experiments).
 - Cost and latency per guide from `results/costs.csv` (a steps call has cost about $0.007 so far).
 
-## 5. Targets (proposed, to be challenged in review)
+## 5. Baselines and targets
 
-| Metric | Target on test |
-|---|---|
-| Coverage recall | ≥ 0.80 per domain |
-| Strict step F1 (IoU ≥ 0.3) | ≥ 0.60 |
-| Median boundary error | ≤ 5 s, or ≤ 15% of step length |
-| Instruction rubric (all 4 items) | ≥ 85% of steps |
-| Category top-1 | ≥ 90% of guides |
-| Quote fidelity | 100% |
-| Narration lift | coverage recall and rubric both higher with transcript |
+**Baselines** (never given the label step count):
+- **Uniform:** cut the video into equal parts of length L = median label length of that domain's **dev**
+  labels. Compared on temporal IoU F1 and boundary error only (it has no text).
+- **Uniform + captions:** the same parts, each described by Muse Spark with the same step prompt minus
+  segmentation and **the same inputs** as the main configuration (video, transcript, on-screen text,
+  audio setting). Compared on step hit F1 and the rubric; this separates "finds good steps" from
+  "writes good text".
+
+**Hard requirements (must hold on test):** contract validity 100% (the `Guide` validator passes; the
+server can cut every clip and cover); quote fidelity 100%, reported with the quote rate.
+
+**Comparative goal:** report, per domain, the **per-video paired difference** in step hit F1 (main −
+uniform + captions), the number of videos where the main configuration wins, and the mean and range of
+the difference. No significance is claimed. Absolute numbers are reported as they are; no absolute
+target is claimed.
+
+**What "test once" means:** the configuration is frozen once (B4). That frozen configuration, and the
+baselines, are run 3 times each on test, and no change is made after seeing any test number. Means and
+ranges in test tables are over those 3 runs.
+
+**Pairing:** main run *k* is paired with baseline run *k* (k = 1, 2, 3; same video, same judge
+model). The per-video difference is averaged over the 3 pairs; its range is the min–max over the pairs.
 
 ## 6. Ablations planned (B2–B3)
 
@@ -208,18 +384,56 @@ costs more and adds a dependency).
 
 One round = change one thing → run dev 3× → metrics table (`results/summary_guides_dev.md`) →
 Codex review → decide. Rounds planned: baseline (B2), 2–3 iterations (B3), freeze and test (B4).
-Stopping rule: freeze on 2026-11-01 regardless of targets; report test numbers as they are.
+Stopping rule: freeze on 2026-11-01 regardless of results; report test numbers as they are.
 
-## 8. Questions for the reviewer
+## 8. Open questions
 
-1. Is order-preserving IoU alignment plus merge-tolerant coverage a fair way to compare against labels
-   with different granularity, or should we evaluate against merged label groups instead?
-2. Participant-level split: with 5–6 participants per factory task, is a 2–3 / 3 split enough, or
-   should we use leave-one-participant-out on dev?
-3. Judge model choice for the instruction rubric (section 4.2) and whether 20% human spot-check is
-   enough to trust it.
-4. Is labelling the narrated videos ourselves (section 3.4) acceptable, and how do we keep the labels
-   independent of the model?
-5. Are the targets in section 5 meaningful, or should they be relative (e.g., beat a fixed-interval
-   baseline that cuts the video into N equal parts)?
-6. Anything in the contract (section 2) that would make the app or the evaluation harder later.
+1. Judge model for 4.1 "same action" and 4.2 (Muse Spark, or another model family).
+2. Whether to add HoloAssist (CDLA-Permissive-2.0) to the license list (3.2).
+3. Whether 2 narrated test videos (one per domain) are enough for the demo claim, or B1 should find a
+   third (another domain, e.g. maintenance).
+
+## 9. Changes from v3 (Codex review #3)
+
+- "Clean clip" removed from the primary hit; replaced by a secondary "clip focus" metric that ignores
+  concurrent labels and waiting inside the step.
+- Fine units: a multi-label unit needs every action in the text. Coarse units: disjoint fixed groups,
+  merged only where all labels exist and are adjacent in that video; merged interval = earliest start to
+  latest end.
+- Human check: actual counts per category and per item, shortfall filled from other categories, rate
+  computed on each item's actual n, extra draw limited to what exists; unmatched-step procedure
+  defined; 5 baseline pairs per domain mixed in; run-1-only limitation shown in tables.
+- Contract: full validator ranges, a separate transcript check, stored guides deleted and regenerated
+  (none is real model output), seed script and API test listed, B2 dependency on `build_guide` and
+  `source_video_id`.
+- "Never sent" means no call found in the logs. Main/baseline run pairing defined.
+
+## 10. Changes from v2 (Codex review #2)
+
+- Exposure: "old test only" → "old eval" (two test pipelines and repeated review calls, not one frozen
+  run). Drill test is not presented as independent; never-sent / old-eval and correct / mistake takes are
+  reported separately.
+- Primary metric uses per-video fine units only; `allowed_merges` moved to a secondary score on a fixed
+  coarse set where each merge is one unit. "Clean clip" judged in addition to the length cap; length
+  ratio reported.
+- Contract matches the server design: times only, server cuts clips and covers; `cover_s` kept;
+  0-based `turn_ids` shown in the prompt; list of code changes before B2.
+- Human check samples accepted, rejected and unmatched pairs; agreement as counts; double-the-sample
+  rule, then "verification incomplete"; narrated test fully scored.
+- Baselines get the same inputs; goal is the per-video paired difference; "test once" defined; quote
+  rate and "quote inside clip"; burned-in captions caveat for the narration ablation.
+
+## 11. Changes from v1 (Codex review #1)
+
+- Splits redone from actual exposure (3.3): the v1 test participants PC u17 and drill u01 were the
+  reference videos the earlier guides were built on; both are now dev-only. Omelet now splits by person
+  (`manifest.csv` has person IDs), not by take.
+- Primary metric is now semantic + overlap + clip length (step hit F1), against label groups fixed in
+  advance; temporal IoU F1 is secondary; order is measured separately so overlapping labels are not
+  penalized. v1's 50%-coverage recall, which one long step could inflate, is dropped.
+- Narrated videos: one dev video per domain before B2, test by a different creator; claim limit stated.
+- Judge sees the whole clip and transcript; human check is a fixed blind stratified sample with a rule
+  for disagreement.
+- Contract: (bundle with clip/cover assets — reverted in v3), `quote.turn_ids` and `end_s`, `inputs_used` →
+  `inputs_provided`, transcript reference in provenance.
+- Absolute targets replaced by baselines + hard requirements; narration effect reported per video.

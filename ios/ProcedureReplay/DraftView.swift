@@ -6,6 +6,7 @@ struct DraftView: View {
   let flow: CreateFlow
   let close: () -> Void
   @State private var editing: GuideStep?
+  @State private var previewing = false
 
   var body: some View {
     if let response = flow.guide {
@@ -44,8 +45,14 @@ struct DraftView: View {
           Button { close() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
         }
         ToolbarItem(placement: .principal) { Text("Draft").font(.headline) }
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Preview") { previewing = true }.accessibilityHint("See the guide as a trainee will")
+        }
       }
       .navigationBarTitleDisplayMode(.inline)
+      .fullScreenCover(isPresented: $previewing) {
+        NavigationStack { GuideView(model: GuideModel(guideId: guide.guideId)) }
+      }
       .sheet(item: $editing) { step in
         StepEditSheet(step: step, duration: guide.durationS) { edit in
           try await flow.save(edit, step: step.index)
@@ -57,6 +64,8 @@ struct DraftView: View {
 
 struct StepRow: View {
   let step: GuideStep
+  var eyebrow: String?
+  var trailing = "chevron.right"
 
   var body: some View {
     HStack(spacing: 12) {
@@ -68,12 +77,12 @@ struct StepRow: View {
       .frame(width: 76, height: 64)
       .clipShape(RoundedRectangle(cornerRadius: 14))
       VStack(alignment: .leading, spacing: 3) {
-        Eyebrow(text: "Step \(step.index) · \(clock(step.startS)) – \(clock(step.endS))")
+        Eyebrow(text: eyebrow ?? "Step \(step.index) · \(clock(step.startS)) – \(clock(step.endS))")
         Text(step.title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink)
         Text(step.instruction).font(.caption).foregroundStyle(Color.inkSecondary).lineLimit(2)
       }
       Spacer(minLength: 0)
-      Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Color.inkSecondary)
+      Image(systemName: trailing).font(.caption.weight(.semibold)).foregroundStyle(Color.inkSecondary)
     }
     .padding(10)
     .background(Color.panel, in: RoundedRectangle(cornerRadius: 20))

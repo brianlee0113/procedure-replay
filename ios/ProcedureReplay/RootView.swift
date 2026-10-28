@@ -8,6 +8,7 @@ struct RootView: View {
 
   @State private var tab = Tab.feed
   @State private var flow: CreateFlow?
+  @State private var openGuide: GuideLink?
 
   var body: some View {
     ZStack(alignment: .bottom) {
@@ -23,8 +24,16 @@ struct RootView: View {
     .fullScreenCover(item: Binding(get: { flow.map(FlowBox.init) }, set: { flow = $0?.flow })) { box in
       CreateFlowView(flow: box.flow) { flow = nil }
     }
+    .fullScreenCover(item: $openGuide) { link in
+      NavigationStack { GuideView(model: GuideModel(guideId: link.id), playing: link.autoplayStep) }
+    }
     .task {
-      if ProcessInfo.processInfo.arguments.contains("--autorun-a3") {
+      let args = ProcessInfo.processInfo.arguments
+      // `--open-guide=<id>` opens a guide as a trainee; `--autorun-a4` also plays step 3 and advances.
+      if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
+        openGuide = GuideLink(id: id, autoplayStep: args.contains("--autorun-a4") ? 3 : nil)
+      }
+      if args.contains("--autorun-a3") {
         let f = CreateFlow()
         flow = f
         await f.autorun()
@@ -58,6 +67,11 @@ struct RootView: View {
       .background(tab == t ? Color.track : .clear, in: .capsule)
     }
   }
+}
+
+private struct GuideLink: Identifiable {
+  let id: String
+  let autoplayStep: Int?
 }
 
 private struct FlowBox: Identifiable {

@@ -63,6 +63,17 @@ enum API {
 
   static func guide(_ id: String) async throws -> GuideResponse { try await send(request("guides/\(id)")) }
 
+  static func react(guideId: String, _ kind: Reaction, on: Bool) async throws -> Reactions {
+    try await send(request("guides/\(guideId)/\(kind.rawValue)", method: on ? "POST" : "DELETE"))
+  }
+
+  static func setProgress(guideId: String, step: Int) async throws {
+    var r = request("guides/\(guideId)/progress", method: "PUT")
+    r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    r.httpBody = try JSONEncoder().encode(["step": step])
+    let _: [String: AnyCodableValue] = try await send(r)
+  }
+
   static func editStep(guideId: String, index: Int, _ edit: StepEdit) async throws -> GuideStep {
     var r = request("guides/\(guideId)/steps/\(index)", method: "PATCH")
     r.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -89,9 +100,13 @@ struct Clip: Codable, Hashable {
   var endS: Double
 }
 
+/// Verbatim instructor words. Contract v1 (B0 plan v4) adds `end_s` and `turn_ids` (transcript turns, from 0);
+/// optional here so guides written before that change still decode.
 struct Quote: Codable, Hashable {
   let text: String
   let startS: Double
+  let endS: Double?
+  let turnIds: [Int]?
 }
 
 struct GuideStep: Codable, Identifiable, Hashable {
@@ -126,13 +141,30 @@ struct Guide: Decodable {
 struct GuideMeta: Decodable {
   let author: String
   let authorName: String
+  let authorRole: String
   let visibility: String
+}
+
+enum Reaction: String { case like, save }
+
+struct Reactions: Decodable, Equatable {
+  var likes: Int
+  var saves: Int
+  var liked: Bool
+  var saved: Bool
+}
+
+/// For responses whose body the app doesn't read.
+struct AnyCodableValue: Decodable {
+  init(from decoder: Decoder) throws {}
 }
 
 struct GuideResponse: Decodable {
   var guide: Guide
   let meta: GuideMeta
   let categoryLabel: String
+  var reactions: Reactions
+  let progress: Int?
 }
 
 /// Draft edit: any subset of the step's text, or new bounds (a re-cut).

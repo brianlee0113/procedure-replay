@@ -44,6 +44,7 @@ enum API {
                               sourceWindow: (start: Double, end: Double)?) async throws -> Job {
     let boundary = "pr-\(UUID().uuidString)"
     var r = request("recordings", method: "POST")
+    r.timeoutInterval = 300  // a few minutes of glasses video over the local network
     r.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
     var body = Data()
     func field(_ name: String, _ value: String) {

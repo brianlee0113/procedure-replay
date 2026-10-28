@@ -36,16 +36,19 @@ r = api.post("/recordings", data={"task": "faucet_repair", "source_video_id": SO
                                   "source_end_s": "40"}, files={"video": silent})
 assert r.status_code == 202, r.text
 job = r.json()
+assert job["stages"]["upload"] == "queued", job  # the source is cut in the job, so the upload returns at once
+for _ in range(1200):  # the cut re-encodes ~28 s of video
+    job = api.get(f"/jobs/{job['id']}").json()
+    if job["status"] in ("done", "error"):
+        break
+    time.sleep(0.05)
+# The offline stand-in builder has no checklist for this task, so the job may end in "error" after the capture.
 assert job["simulated_from"] == {"source_video_id": SOURCE, "start_s": 12.5, "end_s": 40.0}, job
 stored = license_check.local_path(license_check.find_row(job["video_id"]))
 info = probe(stored)
 assert info["has_audio"] and 27.0 <= info["duration"] <= 28.0, info  # the source stretch, with its narration
 assert (stored.with_name(f"{stored.stem}_glasses{stored.suffix}")).read_bytes().startswith(b"silent")
 
-for _ in range(100):
-    if api.get(f"/jobs/{job['id']}").json()["status"] in ("done", "error"):
-        break
-    time.sleep(0.05)
 server.worker.shutdown(wait=True)
 for p in server.UPLOADS.glob("*"):
     p.unlink()

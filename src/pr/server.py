@@ -285,6 +285,9 @@ def run_job(job_id: str) -> None:
         write_json(path, job)
 
     try:
+        if window := job.get("simulate"):  # cut the licensed source here, not in the upload request (it re-encodes)
+            set_stage("upload")
+            job["simulated_from"] = simulated_capture(job["video_id"], **window)
         guide = build_guide(job, set_stage)
         guides.save(guide, guides.Meta(author=job["author"], author_name=job["author_name"], job_id=job_id))
         job.update(status="done", stages={s: "done" for s in STAGES}, finished=guides.now())
@@ -308,13 +311,15 @@ def create_recording(task: str = Form(...), video: UploadFile = File(...), sourc
     video_id = store_upload(f"app_rec_{job_id}", video, task, "reference", source_video_id, license, creator)
     window = None
     if source_video_id and source_start_s is not None and source_end_s is not None:
-        window = simulated_capture(video_id, source_video_id, source_start_s, source_end_s)
+        if source_end_s - max(0.0, source_start_s) < 1.0:
+            raise HTTPException(422, f"source window {source_start_s:.1f}–{source_end_s:.1f} s is shorter than a second")
+        window = {"source_video_id": source_video_id, "start_s": source_start_s, "end_s": source_end_s}
     job = {"id": job_id, "video_id": video_id, "task": task, "guide_id": f"g_{job_id}", "author": user,
            "author_name": author_name, "status": "queued", "created": guides.now(),
            # seconds where the instructor tapped "Mark step" while recording; a hint for the B2 builder
            "marks": parse_marks(marks),
-           "simulated_from": window,
-           "stages": {s: ("done" if s == "upload" else "queued") for s in STAGES}}
+           "simulate": window,  # run_job turns the recording into this stretch of the source (simulated_capture)
+           "stages": {s: ("done" if s == "upload" and not window else "queued") for s in STAGES}}
     write_json(JOBS / f"{job_id}.json", job)
     worker.submit(run_job, job_id)
     return job

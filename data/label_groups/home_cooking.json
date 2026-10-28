@@ -1,0 +1,28 @@
+{
+  "task": "home_cooking",
+  "status": "approved by the user 2026-10-28, before B2 (B0 plan §3.4)",
+  "rule": "Disjoint groups. Merged in a video only if all its labels exist there and no other label starts between them; the merged interval is earliest start to latest end; one unit.",
+  "allowed_merges": [
+    {
+      "labels": [
+        "add the chopped cilantro to the bowl",
+        "add 1/2 tsp ground black pepper to the bowl"
+      ],
+      "why": "two additions to the same bowl"
+    },
+    {
+      "labels": [
+        "scoop the tomatoes from the pan",
+        "put tomatoes on a serving plate"
+      ],
+      "why": "one movement, pan to plate (identical interval in 7 of 17 takes)"
+    },
+    {
+      "labels": [
+        "stop stirring when it's nearly cooked to allow it to set into an omelette",
+        "transfer omelette to the plate and serve with the tomatoes"
+      ],
+      "why": "letting it set and plating are one finishing step"
+    }
+  ]
+}

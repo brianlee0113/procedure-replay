@@ -1,0 +1,21 @@
+{
+  "task": "drill_bit",
+  "status": "approved by the user 2026-10-28, before B2 (B0 plan §3.4)",
+  "rule": "Disjoint groups. Merged in a video only if all its labels exist there and no other label starts between them; the merged interval is earliest start to latest end; one unit.",
+  "allowed_merges": [
+    {
+      "labels": [
+        "remove bit",
+        "insert bit"
+      ],
+      "why": "one 'swap the bit' action at the same chuck"
+    },
+    {
+      "labels": [
+        "plug in",
+        "test"
+      ],
+      "why": "plugging in is a few seconds right before the test run"
+    }
+  ]
+}

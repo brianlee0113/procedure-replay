@@ -1,0 +1,7 @@
+{
+  "task": "pc_repair",
+  "status": "approved by the user 2026-10-28, before B2 (B0 plan §3.4)",
+  "rule": "Disjoint groups. Merged in a video only if all its labels exist there and no other label starts between them; the merged interval is earliest start to latest end; one unit.",
+  "allowed_merges": [],
+  "notes": "No merge: each step installs or handles a different part, and a guide that joins two parts would hide one."
+}

@@ -96,12 +96,13 @@ def run_bytes(cmd: list[str]) -> bytes:
 
 
 def context_block(video: str) -> str:
-    """Prompt text listing what was said in the video with times, or "" if nothing was said."""
+    """Prompt text listing what was said in the video with times, or "" if nothing was said. Each turn is shown
+    with its 0-based position in `turns` (#0, #1, ...), which a guide quote cites as `turn_ids`."""
     turns = transcribe(video)["turns"]
     if not turns:
         return ""
     fmt = lambda s: f"{int(s // 60):02d}:{int(s % 60):02d}"
-    lines = "\n".join(f"[{fmt(t['start_s'])}–{fmt(t['end_s'])}] {t['text']}" for t in turns)
+    lines = "\n".join(f"#{i} [{fmt(t['start_s'])}–{fmt(t['end_s'])}] {t['text']}" for i, t in enumerate(turns))
     return ("\nWhat was said in the video (speech-to-text, times from the start of the video; it may contain "
             f"errors and is only a hint, the video is what counts):\n{lines}\n")
 

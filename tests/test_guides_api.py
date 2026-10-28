@@ -48,6 +48,7 @@ gid = job["guide_id"]
 g = api.get(f"/guides/{gid}", headers=LUIS).json()
 assert g["meta"]["visibility"] == "draft" and g["guide"]["category"] == "workshop_tools"
 assert len(g["guide"]["steps"]) == 5 and g["guide"]["steps"][0]["clip_url"].endswith("/clips/1.mp4")
+assert set(g["guide"]) >= {"inputs_provided", "provenance"} and "inputs_used" not in g["guide"]  # contract v1
 assert api.get(f"/guides/{gid}", headers=MIN).status_code == 404
 assert api.get(f"/guides/{gid}?user=luis").status_code == 200  # images can't send headers
 assert api.get("/feed", headers=MIN).json() == []

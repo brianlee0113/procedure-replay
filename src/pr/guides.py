@@ -1,6 +1,6 @@
 """Guides in the app: the guide contract (docs/B0_guide_eval_plan.md §2), their storage, clips and covers.
 
-A guide is two files under results/app/guides/<guide_id>/ (not in git):
+A guide is three files under results/app/guides/<guide_id>/ (not in git):
     guide.json   the contract the AI track produces; the instructor's Draft edits are written into it
     model.json   the untouched model output, kept for evaluation
     meta.json    server-side fields that are not part of the contract: author, visibility, timestamps
@@ -11,16 +11,17 @@ Until the B2 pipeline exists, `from_checklist` builds a contract guide from a co
 
 import json
 import re
+from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
 import cv2
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from pr.client import RESULTS
 from pr.frames import grab_frame, probe, trim
-from pr.license_check import find_row, local_path
+from pr.license_check import ROOT, find_row, local_path
 from pr.steps import CHECKLISTS, load_tasks
 
 APP = RESULTS / "app"
@@ -39,19 +40,28 @@ CATEGORIES = {
 Category = Literal[tuple(CATEGORIES)]
 Visibility = Literal["draft", "private", "public"]
 CLIP_PAD_S = 1.0
+EPS = 0.01  # seconds; absorbs float rounding in model and label times
+QUOTE_MIN_SIMILARITY = 0.9
 
 
-class Clip(BaseModel):
+class Strict(BaseModel):
+    model_config = ConfigDict(extra="forbid")  # a stored guide with v0 fields (inputs_used) is refused, not mapped
+
+
+class Clip(Strict):
     start_s: float
     end_s: float
 
 
-class Quote(BaseModel):
+class Quote(Strict):
+    """Verbatim instructor words from consecutive transcript turns (0-based positions in `turns`)."""
     text: str
+    turn_ids: list[int] = Field(min_length=1)
     start_s: float
+    end_s: float
 
 
-class Step(BaseModel):
+class Step(Strict):
     index: int
     title: str
     instruction: str
@@ -65,7 +75,7 @@ class Step(BaseModel):
     on_screen_text: list[str] = []
 
 
-class Guide(BaseModel):
+class Guide(Strict):
     """Contract v1: produced by the AI track, consumed unchanged by the app."""
     contract_version: Literal[1] = 1
     guide_id: str
@@ -78,17 +88,26 @@ class Guide(BaseModel):
     category_alternatives: list[Category] = []
     tools: list[str] = []
     steps: list[Step]
-    inputs_used: dict[str, bool]
+    inputs_provided: dict[str, bool]  # what the model was given, not proof that it used it
     provenance: dict
 
     @model_validator(mode="after")
     def steps_in_order(self):
+        if [s.index for s in self.steps] != list(range(1, len(self.steps) + 1)):
+            raise ValueError("step indexes must be 1, 2, 3, ... in order")
         for a, b in zip(self.steps, self.steps[1:]):
             if b.start_s < a.end_s:
                 raise ValueError(f"steps {a.index} and {b.index} overlap or are out of order")
         for s in self.steps:
-            if not (s.start_s < s.end_s and s.clip.start_s <= s.start_s and s.clip.end_s >= s.end_s):
-                raise ValueError(f"step {s.index}: clip must contain [start_s, end_s]")
+            c = s.clip
+            if not (0 <= c.start_s <= s.start_s < s.end_s <= c.end_s <= self.duration_s + EPS):
+                raise ValueError(f"step {s.index}: need 0 <= clip start <= start < end <= clip end <= duration")
+            if s.start_s - c.start_s > CLIP_PAD_S + EPS or c.end_s - s.end_s > CLIP_PAD_S + EPS:
+                raise ValueError(f"step {s.index}: clip pads the step by more than {CLIP_PAD_S}s")
+            if not s.start_s <= s.cover_s <= s.end_s:
+                raise ValueError(f"step {s.index}: cover_s must be inside the step")
+            if s.quote and not s.quote.start_s <= s.quote.end_s:
+                raise ValueError(f"step {s.index}: quote ends before it starts")
         return self
 
 
@@ -145,6 +164,48 @@ def padded(start_s: float, end_s: float, duration_s: float) -> Clip:
                 end_s=max(end_s, min(duration_s, end_s + CLIP_PAD_S)))
 
 
+def normalize(text: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9' ]+", " ", text.lower()).split())
+
+
+def quote_similarity(quote: str, said: str) -> float:
+    """Best match of the quote against any word span of what was said (1.0 = verbatim after normalizing)."""
+    q, words = normalize(quote), normalize(said).split()
+    n = len(q.split())
+    if not n or not words:
+        return 0.0
+    spans = (" ".join(words[i:i + k]) for k in range(max(1, n - 2), n + 3) for i in range(len(words) - k + 1))
+    return max((SequenceMatcher(None, q, span).ratio() for span in spans), default=0.0)
+
+
+def quote_errors(guide: Guide, transcript: dict | None = None) -> list[str]:
+    """Quote checks that need the transcript (§2, §4.4): turns exist and are consecutive, the words are in
+    them, their times match, and they lie inside the step's clip (± CLIP_PAD_S). [] when every quote passes."""
+    quoted = [s for s in guide.steps if s.quote]
+    if not quoted:
+        return []
+    if transcript is None:
+        path = ROOT / guide.provenance.get("transcript_id", "")
+        if not path.is_file():
+            return [f"guide has quotes but no readable transcript_id: {path}"]
+        transcript = json.loads(path.read_text())
+    turns, errors = transcript["turns"], []
+    for s in quoted:
+        q, where = s.quote, f"step {s.index}"
+        ids = q.turn_ids
+        if ids != list(range(ids[0], ids[0] + len(ids))) or not 0 <= ids[0] <= ids[-1] < len(turns):
+            errors.append(f"{where}: turn_ids {ids} are not consecutive turns of {len(turns)}")
+            continue
+        said = turns[ids[0]:ids[-1] + 1]
+        if (sim := quote_similarity(q.text, " ".join(t["text"] for t in said))) < QUOTE_MIN_SIMILARITY:
+            errors.append(f"{where}: quote not in turns {ids} (similarity {sim:.2f})")
+        if abs(q.start_s - said[0]["start_s"]) > EPS or abs(q.end_s - said[-1]["end_s"]) > EPS:
+            errors.append(f"{where}: quote times are not the bounds of turns {ids}")
+        if q.start_s < s.clip.start_s - CLIP_PAD_S or q.end_s > s.clip.end_s + CLIP_PAD_S:
+            errors.append(f"{where}: quoted turns fall outside the clip")
+    return errors
+
+
 def from_checklist(task: str, guide_id: str, category: str, tools: list[str] | None = None) -> Guide:
     """Contract guide from a committed checklist (stand-in for the B2 pipeline)."""
     cl = json.loads((CHECKLISTS / f"{task}.json").read_text())
@@ -153,13 +214,13 @@ def from_checklist(task: str, guide_id: str, category: str, tools: list[str] | N
     for s in cl["steps"]:
         steps.append(Step(
             index=s["index"], title=s["title"], instruction=s["description"], done_when=s["done_when"],
-            start_s=s["start_s"], end_s=s["end_s"],
-            clip=padded(s["start_s"], s["end_s"], duration),
-            cover_s=(s["start_s"] + s["end_s"]) / 2, key_objects=s.get("key_objects", [])))
+            start_s=s["start_s"], end_s=min(s["end_s"], duration),  # the model's last step can end past the video
+            clip=padded(s["start_s"], min(s["end_s"], duration), duration),
+            cover_s=(s["start_s"] + min(s["end_s"], duration)) / 2, key_objects=s.get("key_objects", [])))
     return Guide(
         guide_id=guide_id, source_video_id=cl["reference_video"], duration_s=duration,
         title=load_tasks()[task]["name"], summary=cl["task_summary"], category=category, tools=tools or [],
-        steps=steps, inputs_used={"video": True, "transcript": False, "on_screen_text": False},
+        steps=steps, inputs_provided={"video": True, "transcript": False, "on_screen_text": False},
         provenance={"model": cl.get("model", ""), "builder": "from_checklist", "task": task, "created_at": now()})
 
 

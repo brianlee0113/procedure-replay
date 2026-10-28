@@ -6,7 +6,9 @@
 import AVFoundation
 import MWDATCamera
 import MWDATCore
+import MWDATInputs
 import MWDATMockDevice
+import MWDATSpeech
 import Observation
 import UIKit
 
@@ -37,6 +39,18 @@ final class GlassesCamera {
   var recordingStarted: Date?
   /// When the first frame arrived: the mock feed starts playing the source video from 0:00 then.
   var firstFrameAt: Date?
+  /// The glasses' speech recognizer (MWDATSpeech): what the instructor is saying, partial or final.
+  var caption: String?
+  /// True when the caption comes from the feed video's transcript played through the mock recognizer.
+  var captionSimulated = false
+
+  enum GlassesInput { case markStep, toggleRecording }
+  /// Taps and capture-button presses on the glasses (MWDATInputs), so the instructor's hands stay on the job.
+  @ObservationIgnored var onGlassesInput: ((GlassesInput) -> Void)?
+  @ObservationIgnored private var speech: Speech?
+  @ObservationIgnored private var inputs: Inputs?
+  @ObservationIgnored private var inputTask: Task<Void, Never>?
+  @ObservationIgnored private var narrationTask: Task<Void, Never>?
 
   @ObservationIgnored private var glasses: (any MockGlasses)?
   @ObservationIgnored private var session: DeviceSession?
@@ -99,9 +113,80 @@ final class GlassesCamera {
         }
       }.store(in: tokens)
       camera.stream.start()
+      attachSpeechAndInputs(session)
     } catch {
       state = .failed("The glasses camera didn't start: \(error)")
     }
+  }
+
+  /// Speech and Inputs are experimental DAT capabilities; the recording works without them.
+  private func attachSpeechAndInputs(_ session: DeviceSession) {
+    if let speech = try? session.addSpeech() {
+      self.speech = speech
+      speech.transcriptionPublisher.listen { [weak self] result in
+        Task { @MainActor in self?.caption = result.text }
+      }.store(in: tokens)
+      speech.start()
+    }
+    if let inputs = try? session.addInputs() {
+      self.inputs = inputs
+      let events = inputs.events
+      inputTask = Task { [weak self] in
+        for await event in events {
+          await MainActor.run { self?.handle(event) }
+        }
+      }
+    }
+  }
+
+  private func handle(_ event: InputEvent) {
+    switch event {
+    case .select, .button:
+      onGlassesInput?(.markStep)
+    case .capture(let press, _, _):
+      onGlassesInput?(press == .doublePress ? .toggleRecording : .markStep)
+    default:
+      break
+    }
+  }
+
+  /// MockDeviceKit hears nothing, so play the feed video's transcript through its speech recognizer, in step
+  /// with the feed (which loops from 0:00 at the first frame): each line arrives as a partial, then final.
+  func simulateNarration(_ lines: [CaptionLine], feedDuration: Double) {
+    guard let glasses, feedDuration > 0, !lines.isEmpty else { return }
+    captionSimulated = true
+    let recognizer = glasses.services.speech
+    narrationTask?.cancel()
+    narrationTask = Task { [weak self] in
+      var current: Int?
+      var finalSent = false
+      while !Task.isCancelled {
+        guard let self, let first = self.firstFrameAt else {
+          try? await Task.sleep(for: .milliseconds(200))
+          continue
+        }
+        let t = Date().timeIntervalSince(first).truncatingRemainder(dividingBy: feedDuration)
+        if let i = lines.firstIndex(where: { $0.startS <= t && t < $0.endS }) {
+          let line = lines[i]
+          if i != current {
+            current = i
+            finalSent = false
+            let words = line.text.split(separator: " ")
+            recognizer.simulateTranscription(text: words.prefix(max(1, words.count / 2)).joined(separator: " "),
+                                             isFinal: false, confidence: 0.8)
+          } else if !finalSent, t >= line.startS + (line.endS - line.startS) * 0.6 {
+            finalSent = true
+            recognizer.simulateTranscription(text: line.text, isFinal: true, confidence: 0.9)
+          }
+        }
+        try? await Task.sleep(for: .milliseconds(200))
+      }
+    }
+  }
+
+  /// A tap on the glasses' touchpad (mock glasses only), as the instructor would to mark a step.
+  func simulateGlassesTap() {
+    glasses?.services.input.select()
   }
 
   func startRecording() {
@@ -117,6 +202,12 @@ final class GlassesCamera {
   }
 
   func disconnect() {
+    narrationTask?.cancel()
+    inputTask?.cancel()
+    speech?.stop()
+    speech = nil
+    inputs = nil
+    caption = nil
     camera?.stop()
     session?.stop()
     camera = nil

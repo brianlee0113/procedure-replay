@@ -65,9 +65,13 @@ struct StepPlayerView: View {
     try? await Task.sleep(for: .seconds(3))
     let before = index
     lensMode.requestedStep = index + 1  // what the lens Next button does
+    try? await Task.sleep(for: .seconds(3))
+    let afterButton = index
+    lensMode.lens.simulateSpeech("okay, next step")  // what the trainee says to the glasses
     try? await Task.sleep(for: .seconds(4))
     let result: [String: Any] = ["lens_on": lensMode.isOn, "lens_state": "\(lensMode.lens.state)",
-                                 "error": lensMode.error ?? "", "step_before": before, "step_after_lens_next": index]
+                                 "error": lensMode.error ?? "", "step_before": before, "step_after_lens_next": afterButton,
+                                 "step_after_voice_next": index]
     let out = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
       .appendingPathComponent("lens_result.json")
     try? JSONSerialization.data(withJSONObject: result, options: .prettyPrinted).write(to: out)
@@ -180,7 +184,9 @@ struct StepPlayerView: View {
       if let error = lensMode.error {
         Text(error).font(.caption).padding(8).glassEffect(.regular, in: .rect(cornerRadius: 12))
       } else {
-        Label(lensMode.connecting ? "Connecting to glasses…" : "On your glasses", systemImage: "eyeglasses")
+        Label(lensMode.connecting ? "Connecting to glasses…"
+                : lensMode.heardCommand.map { "Heard “\($0)”" } ?? "Glasses · say “next”",
+              systemImage: lensMode.heardCommand == nil ? "eyeglasses" : "waveform")
           .font(.footnote.weight(.semibold))
           .padding(.horizontal, 12).padding(.vertical, 7)
           .background(Color.ai, in: .capsule)

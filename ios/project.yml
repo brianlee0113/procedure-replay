@@ -64,3 +64,7 @@ targets:
         product: MWDATMockDevice
       - package: MWDAT
         product: MWDATDisplay
+      - package: MWDAT
+        product: MWDATInputs
+      - package: MWDAT
+        product: MWDATSpeech

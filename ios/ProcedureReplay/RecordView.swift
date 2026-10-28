@@ -24,8 +24,12 @@ struct RecordView: View {
           Text(message).font(.callout).foregroundStyle(.white).multilineTextAlignment(.center)
             .padding(14).glassEffect(.regular, in: .rect(cornerRadius: 18))
         }
-        Text("Talk as you work. Meta AI uses your words to write each step.")
-          .font(.footnote).foregroundStyle(.white.opacity(0.75)).multilineTextAlignment(.center)
+        if let caption = camera.caption {
+          captionCard(caption)
+        } else {
+          Text("Talk as you work. Meta AI uses your words to write each step.")
+            .font(.footnote).foregroundStyle(.white.opacity(0.75)).multilineTextAlignment(.center)
+        }
         controls
       }
       .padding(.horizontal, 16)
@@ -33,7 +37,22 @@ struct RecordView: View {
     }
     .environment(\.colorScheme, .dark)
     .sensoryFeedback(.impact(weight: .medium), trigger: camera.isRecording)
-    .task { await camera.connect() }
+    .task { await flow.connectGlasses() }
+  }
+
+  /// What the glasses hear, live (MWDATSpeech).
+  private func captionCard(_ text: String) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      HStack(spacing: 6) {
+        Image(systemName: "mic.fill").foregroundStyle(Color.live)
+        Text(camera.captionSimulated ? "NARRATION · GLASSES SPEECH, SIMULATED" : "NARRATION · LIVE")
+          .font(.eyebrow).foregroundStyle(Color.live)
+      }
+      Text("“\(text)”").font(.headline).foregroundStyle(.white).lineLimit(3)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 18).padding(.vertical, 14)
+    .glassEffect(.regular, in: .rect(cornerRadius: 24))
   }
 
   private var topBar: some View {
@@ -77,7 +96,10 @@ struct RecordView: View {
 
   private var controls: some View {
     HStack(alignment: .top) {
-      sideButton("flag", flow.marks.isEmpty ? "Mark step" : "Marked \(flow.marks.count)") { flow.markStep() }
+      sideButton(flow.lastMarkFromGlasses ? "eyeglasses" : "flag",
+                 flow.marks.isEmpty ? "Mark step" : flow.lastMarkFromGlasses ? "Tapped on glasses" : "Marked \(flow.marks.count)") {
+        flow.markStep()
+      }
         .disabled(!camera.isRecording)
       Spacer()
       VStack(spacing: 6) {

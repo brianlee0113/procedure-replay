@@ -36,11 +36,15 @@ final class LensMode {
   /// Set by a lens button; the step player moves there (total + 1 means "finished").
   var requestedStep: Int?
   var replayRequests = 0
+  /// The last voice command the glasses understood, shown briefly on the phone.
+  var heardCommand: String?
+  private var currentIndex = 1
 
   func turnOn(guide: Guide, step: GuideStep) async {
     isOn = true
     connecting = true
     error = nil
+    lens.onHeard = { [weak self] text in self?.handleVoice(text) }
     await lens.connect()
     connecting = false
     if case .failed(let message) = lens.state {
@@ -54,6 +58,7 @@ final class LensMode {
   func show(guide: Guide, step: GuideStep) async {
     guard isOn, !connecting else { return }
     let index = step.index
+    currentIndex = index
     let total = guide.steps.count
     await lens.show(
       LensStep(index: index, total: total, title: step.title, instruction: step.instruction,
@@ -61,6 +66,27 @@ final class LensMode {
       onPrevious: { [weak self] in Task { @MainActor in self?.requestedStep = max(1, index - 1) } },
       onNext: { [weak self] in Task { @MainActor in self?.requestedStep = index + 1 } },
       onReplay: { [weak self] in Task { @MainActor in self?.replayRequests += 1 } })
+  }
+
+  /// "Next step", "go back", "replay that": hands-free control while the trainee's hands are busy.
+  private func handleVoice(_ text: String) {
+    let said = text.lowercased()
+    if said.contains("next") {
+      requestedStep = currentIndex + 1
+      heardCommand = "Next"
+    } else if said.contains("back") || said.contains("previous") {
+      requestedStep = max(1, currentIndex - 1)
+      heardCommand = "Back"
+    } else if said.contains("replay") || said.contains("again") {
+      replayRequests += 1
+      heardCommand = "Replay"
+    } else {
+      return
+    }
+    Task {
+      try? await Task.sleep(for: .seconds(2))
+      heardCommand = nil
+    }
   }
 
   func finish(title: String) async {

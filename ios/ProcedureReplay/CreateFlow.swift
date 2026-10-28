@@ -20,6 +20,29 @@ final class CreateFlow {
   /// Set once the guide is published; the flow closes and the app shows it in the Feed or Library.
   var published: GuideCard?
 
+  /// Which way the last step mark came in: from the phone or from a tap on the glasses.
+  var lastMarkFromGlasses = false
+
+  init() {
+    camera.onGlassesInput = { [weak self] input in
+      guard let self else { return }
+      switch input {
+      case .markStep:
+        self.markStep(fromGlasses: true)
+      case .toggleRecording:
+        Task { await self.toggleRecording() }
+      }
+    }
+  }
+
+  /// Connects the glasses; with the simulated feed, also plays its narration through the glasses' recognizer.
+  func connectGlasses() async {
+    await camera.connect()
+    if let source = FeedSource.bundled, let lines = try? await API.captions(sourceVideoId: source.videoId) {
+      camera.simulateNarration(lines, feedDuration: source.durationS ?? 0)
+    }
+  }
+
   /// Server stages in order, with what each one means for the instructor (Figma "Building" screen).
   static let stages: [(id: String, title: String, detail: String)] = [
     ("upload", "Uploaded from your glasses", "Video from your glasses"),
@@ -59,8 +82,9 @@ final class CreateFlow {
     }
   }
 
-  func markStep() {
+  func markStep(fromGlasses: Bool = false) {
     guard let started = camera.recordingStarted else { return }
+    lastMarkFromGlasses = fromGlasses
     marks.append(Date().timeIntervalSince(started))
   }
 
@@ -141,14 +165,15 @@ final class CreateFlow {
   /// `--autorun-a3`: record 4 s with one Mark step, upload, follow the job, open the Draft, edit step 1,
   /// and write Documents/a3_result.json for command-line checks.
   func autorun() async {
-    await camera.connect()
+    await connectGlasses()
     for _ in 0..<60 where camera.framesReceived == 0 { try? await Task.sleep(for: .milliseconds(250)) }
     // PR_AUTORUN_RECORD_S sets how long to record (default 4 s; the whole feed for a real demo guide).
     let seconds = Double(ProcessInfo.processInfo.environment["PR_AUTORUN_RECORD_S"] ?? "") ?? 4
     await toggleRecording()
     try? await Task.sleep(for: .seconds(seconds / 2))
-    markStep()
+    camera.simulateGlassesTap()  // marks the step through Inputs, as a tap on real glasses would
     try? await Task.sleep(for: .seconds(seconds / 2))
+    let captionSeen = camera.caption ?? ""
     var stagesSeen: [String] = []
     let watcher = Task { @MainActor in
       while !Task.isCancelled {
@@ -172,6 +197,8 @@ final class CreateFlow {
       "frames_received": framesBeforeStop,
       "recorded_s": recordedSeconds,
       "marks": marks,
+      "mark_from_glasses": lastMarkFromGlasses,
+      "caption_while_recording": captionSeen,
       "job_status": job?.status ?? "none",
       "stages_seen_running": stagesSeen,
       "guide_id": guide?.guide.guideId ?? "none",

@@ -17,6 +17,7 @@ X-User header (or ?user=, default "me"); drafts are visible to their author only
 the id, public guides also appear in the feed.
 
     GET    /categories                       category taxonomy (id → label)
+    GET    /sources/{video_id}/transcript    timed turns of a licensed video (feeds the simulated glasses speech)
     POST   /recordings                       multipart: video + source_video_id or license + creator (+ marks) → job
     GET    /jobs/{id}                        stages (upload, transcribe, read_text, split, write) + guide_id
     GET    /guides/{id}                      guide, meta, reactions, my progress
@@ -38,6 +39,7 @@ evaluation are unchanged.
 
 import json
 import os
+import re
 import shutil
 import threading
 import time
@@ -299,6 +301,36 @@ def run_job(job_id: str) -> None:
 @app.get("/categories")
 def categories() -> dict:
     return guides.CATEGORIES
+
+
+@app.get("/sources/{video_id}/transcript")
+def source_transcript(video_id: str) -> dict:
+    """What is said in a licensed video, as timed turns (Muse Voice Transcribe, cached). The app plays these
+    through MockDeviceKit's speech recognizer while that video is the simulated glasses feed, standing in for
+    the glasses' own on-device recognition of the instructor's voice."""
+    from pr.transcribe import transcribe
+
+    try:
+        require_allowed(video_id)
+    except LicenseError as e:
+        raise HTTPException(404, str(e))
+    t = transcribe(video_id)
+    return {"video_id": video_id, "model": t.get("model"), "lines": caption_lines(t["turns"])}
+
+
+def caption_lines(turns: list[dict]) -> list[dict]:
+    """Muse Voice Transcribe turns can run 20+ s and carry <|speaker_X|> markers inside. Split each turn at
+    those markers into caption lines and spread the turn's time over them by length (no word timestamps)."""
+    lines = []
+    for u in turns:
+        parts = [p.strip() for p in re.split(r"<\|speaker_[^|]*\|>", u["text"]) if p.strip()]
+        total = sum(len(p) for p in parts) or 1
+        t = u["start_s"]
+        for p in parts:
+            dt = (u["end_s"] - u["start_s"]) * len(p) / total
+            lines.append({"start_s": round(t, 2), "end_s": round(t + dt, 2), "text": p})
+            t += dt
+    return lines
 
 
 @app.post("/recordings", status_code=202)

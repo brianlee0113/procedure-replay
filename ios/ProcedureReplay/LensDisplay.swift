@@ -7,6 +7,7 @@
 import MWDATCore
 import MWDATDisplay
 import MWDATMockDevice
+import MWDATSpeech
 import UIKit
 
 /// What the lens shows for one step.
@@ -27,6 +28,9 @@ final class LensController {
     didSet { onStateChange?(state) }
   }
   var onStateChange: ((State) -> Void)?
+  /// Final phrases the glasses heard (MWDATSpeech), for "next", "back" and "replay".
+  var onHeard: ((String) -> Void)?
+  private var speech: Speech?
 
   private var glasses: (any MockGlasses)?
   private var session: DeviceSession?
@@ -83,6 +87,15 @@ final class LensController {
           }
         }.store(in: tokens)
         display.start()
+      }
+      // Voice is optional (experimental capability): the lens buttons work without it.
+      if let speech = try? session.addSpeech() {
+        self.speech = speech
+        speech.transcriptionPublisher.listen { [weak self] result in
+          guard result.isFinal else { return }
+          Task { @MainActor in self?.onHeard?(result.text) }
+        }.store(in: tokens)
+        speech.start()
       }
       state = .ready
     } catch {
@@ -148,7 +161,14 @@ final class LensController {
     glasses?.services.display.sendClick(identifier: identifier) ?? false
   }
 
+  /// What the trainee says, heard by the glasses (mock glasses only).
+  func simulateSpeech(_ text: String) {
+    glasses?.services.speech.simulateTranscription(text: text, isFinal: true, confidence: 0.9)
+  }
+
   func disconnect() {
+    speech?.stop()
+    speech = nil
     display?.stop()
     session?.stop()
     display = nil

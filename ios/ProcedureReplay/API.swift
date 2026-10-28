@@ -67,6 +67,13 @@ enum API {
 
   static func job(_ id: String) async throws -> Job { try await send(request("jobs/\(id)")) }
 
+  /// Timed narration of a licensed video (src/pr/server.py caption_lines).
+  static func captions(sourceVideoId: String) async throws -> [CaptionLine] {
+    struct Response: Decodable { let lines: [CaptionLine] }
+    let r: Response = try await send(request("sources/\(sourceVideoId)/transcript"))
+    return r.lines
+  }
+
   static func guide(_ id: String) async throws -> GuideResponse { try await send(request("guides/\(id)")) }
 
   static func react(guideId: String, _ kind: Reaction, on: Bool) async throws -> Reactions {
@@ -258,4 +265,10 @@ struct PublishRequest: Encodable {
   let title: String
   let summary: String
   let category: String
+}
+
+struct CaptionLine: Decodable {
+  let startS: Double
+  let endS: Double
+  let text: String
 }

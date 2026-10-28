@@ -6,15 +6,18 @@ struct StepPlayerView: View {
   let guide: Guide
   @State private var index: Int
   @State private var player = LoopingPlayer()
+  @State private var lensMode = LensMode()
   @Environment(\.dismiss) private var dismiss
 
   private let autorun: Bool
+  private let autorunLens: Bool
 
   init(guide: Guide, startIndex: Int) {
     self.guide = guide
     _index = State(initialValue: startIndex)
     let args = ProcessInfo.processInfo.arguments
     autorun = args.contains("--autorun-a4") || args.contains("--autorun-e2e")
+    autorunLens = args.contains("--autorun-lens")
   }
 
   private var step: GuideStep { guide.steps.first { $0.index == index } ?? guide.steps[0] }
@@ -31,9 +34,43 @@ struct StepPlayerView: View {
       player.player.isMuted = !guide.hasNarration
       show(step)
     }
-    .onChange(of: index) { show(step) }
-    .onDisappear { player.stop() }
-    .task { if autorun { await runAutorun() } }
+    .onChange(of: index) {
+      show(step)
+      Task { await lensMode.show(guide: guide, step: step) }
+    }
+    .onChange(of: lensMode.requestedStep) {
+      guard let requested = lensMode.requestedStep else { return }
+      lensMode.requestedStep = nil
+      if requested > guide.steps.count {
+        Task { await lensMode.finish(title: guide.title) }
+      } else {
+        index = requested
+      }
+    }
+    .onChange(of: lensMode.replayRequests) { player.restart() }
+    .onDisappear {
+      player.stop()
+      lensMode.turnOff()
+    }
+    .task {
+      if autorun { await runAutorun() }
+      if autorunLens { await runLensAutorun() }
+    }
+  }
+
+  /// `--autorun-lens`: turn on the Display glasses, then press Next on the lens; the phone must follow.
+  private func runLensAutorun() async {
+    for _ in 0..<200 where !player.isReady { try? await Task.sleep(for: .milliseconds(100)) }
+    await lensMode.turnOn(guide: guide, step: step)
+    try? await Task.sleep(for: .seconds(3))
+    let before = index
+    lensMode.requestedStep = index + 1  // what the lens Next button does
+    try? await Task.sleep(for: .seconds(4))
+    let result: [String: Any] = ["lens_on": lensMode.isOn, "lens_state": "\(lensMode.lens.state)",
+                                 "error": lensMode.error ?? "", "step_before": before, "step_after_lens_next": index]
+    let out = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("lens_result.json")
+    try? JSONSerialization.data(withJSONObject: result, options: .prettyPrinted).write(to: out)
   }
 
   /// `--autorun-a4`: wait for the clip, advance one step, wait again, write Documents/a4_result.json.
@@ -81,6 +118,7 @@ struct StepPlayerView: View {
       VStack(spacing: 10) {
         progress
         topControls
+        if lensMode.isOn || lensMode.connecting || lensMode.error != nil { lensStatus }
         Spacer()
         scrubber
       }
@@ -116,6 +154,15 @@ struct StepPlayerView: View {
         .padding(.horizontal, 14).padding(.vertical, 8)
         .glassEffect(.regular, in: .capsule)
       Spacer()
+      Button {
+        if lensMode.isOn { lensMode.turnOff() } else { Task { await lensMode.turnOn(guide: guide, step: step) } }
+      } label: {
+        Image(systemName: lensMode.isOn ? "eyeglasses.slash" : "eyeglasses").font(.system(size: 16, weight: .semibold))
+          .frame(width: 40, height: 40)
+          .foregroundStyle(lensMode.isOn ? Color.ink : .white)
+      }
+      .glassEffect(lensMode.isOn ? .regular.tint(.white) : .regular, in: .circle)
+      .accessibilityLabel(lensMode.isOn ? "Stop following on glasses" : "Follow on Display glasses")
       Button { player.loops.toggle() } label: {
         Label("Loop", systemImage: "repeat").font(.subheadline.weight(.semibold))
           .padding(.horizontal, 12).padding(.vertical, 8)
@@ -123,6 +170,28 @@ struct StepPlayerView: View {
       }
       .glassEffect(player.loops ? .regular.tint(.white) : .regular, in: .capsule)
       .accessibilityValue(player.loops ? "On" : "Off")
+    }
+    .foregroundStyle(.white)
+  }
+
+  /// "On your glasses" and, with simulated glasses, the lens itself in the corner.
+  private var lensStatus: some View {
+    HStack(alignment: .top) {
+      if let error = lensMode.error {
+        Text(error).font(.caption).padding(8).glassEffect(.regular, in: .rect(cornerRadius: 12))
+      } else {
+        Label(lensMode.connecting ? "Connecting to glasses…" : "On your glasses", systemImage: "eyeglasses")
+          .font(.footnote.weight(.semibold))
+          .padding(.horizontal, 12).padding(.vertical, 7)
+          .background(Color.ai, in: .capsule)
+      }
+      Spacer()
+      if lensMode.isOn, !lensMode.connecting {
+        VStack(spacing: 4) {
+          LensPreview(lens: lensMode.lens).frame(width: 150, height: 150).clipShape(RoundedRectangle(cornerRadius: 18))
+          Text("SIMULATED LENS").font(.eyebrow).foregroundStyle(.white.opacity(0.8))
+        }
+      }
     }
     .foregroundStyle(.white)
   }

@@ -158,6 +158,7 @@ final class CreateFlow {
         try? await Task.sleep(for: .milliseconds(100))
       }
     }
+    let framesBeforeStop = camera.framesReceived  // stopping disconnects the glasses and resets the count
     await toggleRecording()
     watcher.cancel()
     var edited = ""
@@ -168,7 +169,7 @@ final class CreateFlow {
     }
     let result: [String: Any] = [
       "phase": "\(phase)",
-      "frames_received": camera.framesReceived,
+      "frames_received": framesBeforeStop,
       "recorded_s": recordedSeconds,
       "marks": marks,
       "job_status": job?.status ?? "none",

@@ -47,7 +47,8 @@ struct RootView: View {
       let args = ProcessInfo.processInfo.arguments
       // `--open-guide=<id>` opens a guide as a trainee; `--autorun-a4` also plays step 3 and advances.
       if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
-        openGuide = GuideLink(id: id, autoplayStep: args.contains("--autorun-a4") ? 3 : nil)
+        let autoplay = args.contains("--autorun-a4") ? 3 : args.contains("--autorun-lens") ? 1 : nil
+        openGuide = GuideLink(id: id, autoplayStep: autoplay)
       }
       // `--open-draft=<id>` reopens a draft in the Draft editor, as tapping it in Library does.
       if let id = args.first(where: { $0.hasPrefix("--open-draft=") })?.replacingOccurrences(of: "--open-draft=", with: "") {

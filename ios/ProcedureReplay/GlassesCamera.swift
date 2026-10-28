@@ -38,13 +38,15 @@ final class GlassesCamera {
   /// When the first frame arrived: the mock feed starts playing the source video from 0:00 then.
   var firstFrameAt: Date?
 
+  @ObservationIgnored private var glasses: (any MockGlasses)?
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var camera: Camera?
   @ObservationIgnored private let tokens = ListenerTokenBag()
   @ObservationIgnored private let recorder = FrameRecorder()
   // Created before pairing so it sees the mock device appear; createSession throws noEligibleDevice
   // if no device is active yet (DAT skills/display-access).
-  @ObservationIgnored private let selector = AutoDeviceSelector(wearables: Wearables.shared)
+  // Camera glasses only: the trainee's Display glasses (LensController) may be paired at the same time.
+  @ObservationIgnored private let selector = AutoDeviceSelector(wearables: Wearables.shared, filter: { !$0.supportsDisplay() })
 
   var isRecording: Bool { recordingStarted != nil }
 
@@ -62,6 +64,7 @@ final class GlassesCamera {
         return
       }
       glasses.services.camera.setCameraFeed(fileURL: feed)
+      self.glasses = glasses
       for await device in selector.activeDeviceStream() where device != nil { break }
       let session = try Wearables.shared.createSession(deviceSelector: selector)
       self.session = session
@@ -119,6 +122,12 @@ final class GlassesCamera {
     camera = nil
     session = nil
     tokens.clear()
+    // Unpair, or every new recording adds a mock device and pairing fails after three.
+    if let glasses { MockDeviceKit.shared.unpairDevice(glasses) }
+    glasses = nil
+    frame = nil
+    framesReceived = 0
+    firstFrameAt = nil
     state = .idle
   }
 }

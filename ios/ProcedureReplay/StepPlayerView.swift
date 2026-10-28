@@ -27,7 +27,10 @@ struct StepPlayerView: View {
     }
     .background(Color.white)
     .ignoresSafeArea(edges: .top)
-    .onAppear { show(step) }
+    .onAppear {
+      player.player.isMuted = !guide.hasNarration
+      show(step)
+    }
     .onChange(of: index) { show(step) }
     .onDisappear { player.stop() }
     .task { if autorun { await runAutorun() } }

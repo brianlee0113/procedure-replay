@@ -293,17 +293,43 @@ def categories() -> dict:
 @app.post("/recordings", status_code=202)
 def create_recording(task: str = Form(...), video: UploadFile = File(...), source_video_id: str | None = Form(None),
                      license: str | None = Form(None), creator: str | None = Form(None),
-                     author_name: str = Form("You"), marks: str | None = Form(None), user: str = USER) -> dict:
+                     author_name: str = Form("You"), marks: str | None = Form(None),
+                     source_start_s: float | None = Form(None), source_end_s: float | None = Form(None),
+                     user: str = USER) -> dict:
     job_id = uuid.uuid4().hex[:12]
     video_id = store_upload(f"app_rec_{job_id}", video, task, "reference", source_video_id, license, creator)
+    window = None
+    if source_video_id and source_start_s is not None and source_end_s is not None:
+        window = simulated_capture(video_id, source_video_id, source_start_s, source_end_s)
     job = {"id": job_id, "video_id": video_id, "task": task, "guide_id": f"g_{job_id}", "author": user,
            "author_name": author_name, "status": "queued", "created": guides.now(),
            # seconds where the instructor tapped "Mark step" while recording; a hint for the B2 builder
            "marks": parse_marks(marks),
+           "simulated_from": window,
            "stages": {s: ("done" if s == "upload" else "queued") for s in STAGES}}
     write_json(JOBS / f"{job_id}.json", job)
     worker.submit(run_job, job_id)
     return job
+
+
+def simulated_capture(video_id: str, source_video_id: str, start_s: float, end_s: float) -> dict:
+    """MockDeviceKit glasses send video only, so the app's file is a silent re-capture. When the app says which
+    stretch of the licensed feed video played while it recorded, the recording becomes that stretch of the source,
+    with its sound: what real glasses would have seen and heard. The app's own file is kept as <id>_glasses.mp4."""
+    from pr.frames import probe, trim
+
+    row = find_row(video_id)
+    dest = local_path(row)
+    src = local_path(require_allowed(source_video_id))
+    duration = probe(src)["duration"]
+    start, end = max(0.0, start_s), min(duration, end_s)
+    if end - start < 1.0:
+        raise HTTPException(422, f"source window {start_s:.1f}–{end_s:.1f} s is shorter than a second")
+    dest.rename(dest.with_name(f"{dest.stem}_glasses{dest.suffix}"))
+    trim(src, start, end - start, dest.with_suffix(".mp4"))
+    if dest.suffix != ".mp4":  # the manifest row points at the stored file; keep it valid
+        dest.with_suffix(".mp4").rename(dest)
+    return {"source_video_id": source_video_id, "start_s": round(start, 2), "end_s": round(end, 2)}
 
 
 def parse_marks(marks: str | None) -> list[float]:

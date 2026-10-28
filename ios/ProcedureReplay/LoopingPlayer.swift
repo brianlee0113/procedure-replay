@@ -22,7 +22,7 @@ final class LoopingPlayer {
   @ObservationIgnored private var statusTask: Task<Void, Never>?
 
   init() {
-    player.isMuted = true  // narration comes with B2; the dataset clips have no speech
+    player.isMuted = true  // StepPlayerView turns sound on for guides built with a transcript
     timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 10), queue: .main) {
       [weak self] t in
       MainActor.assumeIsolated {

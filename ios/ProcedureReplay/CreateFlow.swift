@@ -66,6 +66,7 @@ final class CreateFlow {
 
   func finishRecording() async {
     recordedSeconds = camera.recordingStarted.map { Date().timeIntervalSince($0) } ?? 0
+    let window = feedWindow()
     thumbnail = camera.frame
     guard let file = await camera.stopRecording() else {
       phase = .failed("Nothing was recorded. Record for at least a second, then stop.")
@@ -78,12 +79,23 @@ final class CreateFlow {
     }
     phase = .uploading
     do {
-      job = try await API.uploadRecording(file: file, task: source.task, sourceVideoId: source.videoId, marks: marks)
+      job = try await API.uploadRecording(file: file, task: source.task, sourceVideoId: source.videoId, marks: marks,
+                                          sourceWindow: window)
       phase = .building
       await followJob()
     } catch {
       phase = .failed("Upload failed. Is the Mac server running at \(API.base.absoluteString)? (\(error.localizedDescription))")
     }
+  }
+
+  /// Which stretch of the licensed feed video played while recording (the mock feed loops from 0:00 at the
+  /// first frame). The server makes that stretch, with its sound, the recording (server.simulated_capture).
+  private func feedWindow() -> (start: Double, end: Double)? {
+    guard let started = camera.recordingStarted, let first = camera.firstFrameAt,
+      let duration = FeedSource.bundled?.durationS, duration > 0
+    else { return nil }
+    let start = started.timeIntervalSince(first).truncatingRemainder(dividingBy: duration)
+    return (start, min(duration, start + recordedSeconds))
   }
 
   private func followJob() async {
@@ -131,10 +143,12 @@ final class CreateFlow {
   func autorun() async {
     await camera.connect()
     for _ in 0..<60 where camera.framesReceived == 0 { try? await Task.sleep(for: .milliseconds(250)) }
+    // PR_AUTORUN_RECORD_S sets how long to record (default 4 s; the whole feed for a real demo guide).
+    let seconds = Double(ProcessInfo.processInfo.environment["PR_AUTORUN_RECORD_S"] ?? "") ?? 4
     await toggleRecording()
-    try? await Task.sleep(for: .seconds(2))
+    try? await Task.sleep(for: .seconds(seconds / 2))
     markStep()
-    try? await Task.sleep(for: .seconds(2))
+    try? await Task.sleep(for: .seconds(seconds / 2))
     var stagesSeen: [String] = []
     let watcher = Task { @MainActor in
       while !Task.isCancelled {
@@ -147,8 +161,9 @@ final class CreateFlow {
     await toggleRecording()
     watcher.cancel()
     var edited = ""
-    if phase == .draft {
-      try? await save(StepEdit(title: "Take the battery pack off the drill"), step: 1)
+    if phase == .draft, let first = guide?.guide.steps.first {
+      // Exercise the Draft edit without changing what Meta AI wrote: tighten step 1's title and save it back.
+      try? await save(StepEdit(title: first.title.trimmingCharacters(in: .whitespaces)), step: 1)
       edited = guide?.guide.steps.first?.title ?? ""
     }
     let result: [String: Any] = [

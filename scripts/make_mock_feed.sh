@@ -20,5 +20,7 @@ ffmpeg -y -loglevel error -i "$src" -an \
   -vf "scale=540:540:force_original_aspect_ratio=decrease,pad=540:960:(ow-iw)/2:(oh-ih)/2,fps=30" \
   -c:v libx265 -tag:v hvc1 -preset fast -crf 26 "$out"
 # The app sends this id with each recording, so the upload inherits the feed video's license (server.store_upload).
-printf '{"video_id": "%s", "task": "%s"}\n' "$id" "$task" > "${out%.mp4}.json"
+# duration_s lets the app tell which stretch of the source played while it recorded (CreateFlow.feedWindow).
+dur=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$out")
+printf '{"video_id": "%s", "task": "%s", "duration_s": %s}\n' "$id" "$task" "$dur" > "${out%.mp4}.json"
 echo "wrote $out and ${out%.mp4}.json from $id ($task)"

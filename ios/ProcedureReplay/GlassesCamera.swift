@@ -14,6 +14,7 @@ import UIKit
 struct FeedSource: Decodable {
   let videoId: String
   let task: String
+  let durationS: Double?
 
   static let bundled: FeedSource? = {
     guard let url = Bundle.main.url(forResource: "glasses_feed", withExtension: "json"),
@@ -34,6 +35,8 @@ final class GlassesCamera {
   var frame: UIImage?
   var framesReceived = 0
   var recordingStarted: Date?
+  /// When the first frame arrived: the mock feed starts playing the source video from 0:00 then.
+  var firstFrameAt: Date?
 
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var camera: Camera?
@@ -87,6 +90,7 @@ final class GlassesCamera {
         Task { @MainActor in
           guard let self else { return }
           self.framesReceived += 1
+          if self.firstFrameAt == nil { self.firstFrameAt = Date() }
           if let image { self.frame = image }
           if self.state != .streaming { self.state = .streaming }
         }

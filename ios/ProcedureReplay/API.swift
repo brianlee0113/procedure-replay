@@ -40,7 +40,8 @@ enum API {
 
   /// Upload a recording. `sourceVideoId` is the licensed video fed to the mock glasses, so the upload inherits
   /// its license at the server's license gate.
-  static func uploadRecording(file: URL, task: String, sourceVideoId: String, marks: [Double]) async throws -> Job {
+  static func uploadRecording(file: URL, task: String, sourceVideoId: String, marks: [Double],
+                              sourceWindow: (start: Double, end: Double)?) async throws -> Job {
     let boundary = "pr-\(UUID().uuidString)"
     var r = request("recordings", method: "POST")
     r.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
@@ -52,6 +53,10 @@ enum API {
     field("source_video_id", sourceVideoId)
     field("author_name", userName)
     field("marks", "[" + marks.map { String(format: "%.2f", $0) }.joined(separator: ",") + "]")
+    if let w = sourceWindow {
+      field("source_start_s", String(format: "%.2f", w.start))
+      field("source_end_s", String(format: "%.2f", w.end))
+    }
     body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"video\"; filename=\"recording.mp4\"\r\nContent-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
     body.append(try Data(contentsOf: file))
     body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
@@ -165,6 +170,10 @@ struct Guide: Decodable {
   let category: String
   let tools: [String]
   var steps: [GuideStep]
+  /// What the model was given; a transcript means the clips have narration worth hearing.
+  let inputsProvided: [String: Bool]?
+
+  var hasNarration: Bool { inputsProvided?["transcript"] == true }
 }
 
 struct GuideMeta: Decodable {

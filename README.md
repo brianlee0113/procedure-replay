@@ -1,11 +1,16 @@
 # ProcedureReplay
 
-Watch one expert do a manual task once. Then check anyone else doing it.
+An instructor wears Meta glasses and does a job while explaining it out loud. ProcedureReplay turns that one
+recording into a step-by-step guide that trainees follow on their iPhone.
 
-ProcedureReplay turns a first-person video of an expert doing a manual procedure (repairing a PC,
-changing a drill bit), recorded hands-free on smart glasses, into an ordered checklist with timestamps and reference frames.
-Given a second video of a different person doing the same task, it checks every step of the checklist
-against that video and flags **skipped** or **out-of-order** steps at the timestamp where they show.
+Meta's multimodal model (Muse Spark, with Muse Voice Transcribe for the narration) splits the recording into
+steps and writes, for each step, an instruction, a "done when" check and the instructor's own words; the server
+cuts one looping clip per step. The instructor reviews the draft, publishes it as public or private, and public
+guides appear in a feed where people can like and save them. The same app covers factory work (repairing a PC,
+changing a drill bit) and everyday tasks (cooking, fixing a faucet).
+
+An earlier part of the project, still in this repo, checks a trainee's own video against a guide and flags
+**skipped** or **out-of-order** steps (Pipeline and evaluation below).
 
 Built for the Meta Global AI Developer Hackathon (indie track, "Push the Frontier", manufacturing),
 Oct 26 – Nov 4, 2026.
@@ -43,6 +48,40 @@ uv sync
 cp .env.example .env          # then put your Meta Model API key in META_API_KEY
 uv run python -m pr.license_check
 ```
+
+## iPhone app
+
+SwiftUI, iOS 26 (Liquid Glass), with the [Meta Wearables Device Access Toolkit](https://github.com/facebook/meta-wearables-dat-ios)
+1.0.1. Without glasses, its **MockDeviceKit** plays a licensed video as the glasses' camera feed; the demo says so.
+The app talks to the Mac server (`src/pr/server.py`), so the Meta API key never leaves the Mac.
+
+| Screen | What it does |
+| --- | --- |
+| Record | The glasses' view, REC time, "Mark step"; stopping uploads the recording |
+| Building | The server job's stages: upload → transcribe → read on-screen text → split into steps → write instructions |
+| Draft | Meta AI's title, summary and steps; the instructor edits a step's words or re-cuts its start/end |
+| Publish | Title, category and description arrive filled in ("AI suggested"); Public or Private |
+| Feed | Public guides, newest first, by category; like and save |
+| Guide · Step player | A trainee's view: each step's clip loops with its instruction, "done when" and the instructor's quote |
+| Library | Continue where you stopped, saved guides, your own guides and who can see them |
+
+MockDeviceKit sends video only, so the app's own capture is silent. The app records which stretch of the feed
+video played while it recorded, and the server stores that stretch of the licensed source, with its sound, as
+the recording (`simulated_capture` in `src/pr/server.py`). The guide is then built from the recording as it
+would be from real glasses.
+
+Run it:
+
+```bash
+scripts/make_mock_feed.sh yt_LPwPomA7BfM    # the glasses feed: a narrated first-person video (HEVC, 540x960, 30 fps)
+uv run python scripts/seed_guides.py        # optional: three demo guides in the feed
+uv run uvicorn pr.server:app --port 8000    # Muse Spark builds guides; PR_BUILDER=checklist for an offline stand-in
+cd ios && xcodegen && open ProcedureReplay.xcodeproj   # then run on an iOS 26 simulator
+```
+
+Launch arguments for unattended checks, each writing a JSON result into the app's Documents folder:
+`--autorun-a3` (record → Draft), `--autorun-a5` (… → publish), `--autorun-e2e` (… → open from the Feed → play →
+Library; `PR_AUTORUN_RECORD_S` sets the recording length), `--open-guide=<id>`, `--open-draft=<id>`.
 
 ## Data
 
@@ -163,7 +202,9 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_*.py` | Scoring rule (detected / false flag / extra flags) + checks for scoring, judging, voting | day 1–2 |
 | `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth; per run, first pass vs re-check, and vote | day 1–2 |
-| `src/pr/server.py` | Local HTTP server for the iPhone app: Guides, expert step edits, recording upload (same license gate), Reviews | day 2 |
+| `src/pr/server.py`, `src/pr/guides.py` | Local HTTP server for the iPhone app: recording upload through the license gate (and the simulated glasses capture), build jobs, guides (contract v1), Draft edits and re-cuts, publish, feed, likes, saves, library, step clips and covers | day 2–3 |
+| `ios/` | iPhone app: glasses capture (MockDeviceKit), Record → Building → Draft → Publish, Feed, Guide and Step player, Library | day 2–3 |
+| `scripts/make_mock_feed.sh`, `scripts/seed_guides.py` | Glasses feed from a licensed video; demo guides | day 2–3 |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
 ## Third-party

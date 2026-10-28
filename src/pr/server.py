@@ -49,7 +49,7 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, 
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from pr import guides
+from pr import build, guides
 from pr.align import align, keystep_of, unanswered
 from pr.client import RESULTS, MetaClient
 from pr.judge import judge
@@ -253,9 +253,17 @@ def read_json(path, default):
     return json.loads(path.read_text()) if path.exists() else default
 
 
+def b2_builder(job: dict, set_stage) -> guides.Guide:
+    """The B2 builder (pr.build) on the uploaded recording itself. A failure fails the job; there is no fallback
+    to the checklist, which would show clips the instructor never filmed."""
+    guide, raw = build.build_guide(job["video_id"], job["guide_id"], marks=job.get("marks"), set_stage=set_stage)
+    write_json(guides.guide_dir(guide.guide_id) / "raw.json", raw)  # the model's answer, before postprocess
+    return guide
+
+
 def checklist_builder(job: dict, set_stage) -> guides.Guide:
-    """Stand-in until the B2 pipeline: the committed checklist of the recording's task, on the dataset's
-    reference video (so clips and covers come from real footage). Replace with the B2 builder."""
+    """Offline stand-in, only when PR_BUILDER=checklist (API tests, demo without network): the committed checklist
+    of the recording's task, on the dataset's reference video, not the recording."""
     for stage in STAGES[1:]:
         set_stage(stage)
         time.sleep(STAGE_DELAY_S)
@@ -263,7 +271,7 @@ def checklist_builder(job: dict, set_stage) -> guides.Guide:
     return guides.from_checklist(task, job["guide_id"], DEFAULT_CATEGORY.get(task, "other"))
 
 
-build_guide = checklist_builder
+build_guide = checklist_builder if os.environ.get("PR_BUILDER") == "checklist" else b2_builder
 
 
 def run_job(job_id: str) -> None:

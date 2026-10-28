@@ -1,0 +1,27 @@
+# Guide evaluation splits (docs/B0_guide_eval_plan.md §3.3). Split by participant; test participants are never
+# run before B4. Takes are the labelled originals in data/keysteps/ (not the edited __cut/__swap videos).
+#
+# iterate: the set run every B2–B3 round. All correct/normal takes of dev participants, plus one fixed take
+# with mistakes per dev participant (the lowest-numbered one), so the dev mix also has the kind of takes that
+# PC u02 and omelet person 3 bring to test. The full dev set is run at the B2 baseline and before the freeze.
+
+pc_repair:
+  dev: [u01, u15, u16, u17]
+  test: [u02, u14]
+  iterate_mistakes: [22_u01_r07_m_01, 22_u15_r03_m_01, 22_u16_r03_m_01, 22_u17_r03_m_01]
+
+drill_bit:
+  dev: [u01, u02, u15, u16, u17]
+  test: [u14]
+  iterate_mistakes: [07_u01_r02_m_01, 07_u02_r03_m_01, 07_u15_r04_m_01, 07_u16_r04_m_01, 07_u17_r03_m_01]
+
+home_cooking:
+  dev: [person 1, person 6]
+  test: [person 3, person 7]
+  iterate_mistakes: [cc4d_22_10, cc4d_22_26]
+
+# Narrated (§3.2): split by creator. Videos are listed once they pass the speech / first-person / license check
+# and have labels in data/keysteps/.
+narrated:
+  dev: []    # to add: yt_LPwPomA7BfM (faucet, The Old Corona), Ghanzi fried rice
+  test: []   # to add: yt_P-pHllvP0wo (Abraham Moreno), Ultra Plumbing PVC repair

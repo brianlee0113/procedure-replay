@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 os.environ["PR_STAGE_DELAY_S"] = "0"
+os.environ["PR_BUILDER"] = "checklist"  # offline stand-in; the real builder would call the Meta API
 
 from fastapi.testclient import TestClient  # noqa: E402
 

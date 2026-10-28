@@ -233,7 +233,10 @@ and the user approves them. Two label sets per video:
   set of **disjoint** groups of steps a good guide may reasonably show as one (e.g., omelet "add the
   chopped cilantro" + "add 1/2 tsp ground black pepper"; "stop stirring" + "transfer omelette"). In each
   video, a group is merged **only if all its labels exist in that video and are adjacent** there (no
-  other label starts between them in time order); otherwise its labels stay as fine units. This covers
+  other label starts between them in time order); otherwise its labels stay as fine units. A step can
+  be labelled twice in one video (10 of 106 takes, e.g. drill "remove bit" redone): labels are sorted by
+  start, and a merge is applied left to right wherever a run of consecutive labels is exactly the
+  group's set. This covers
   mistake takes with a step left out and takes with steps swapped. A merged unit's interval runs from
   the earliest start to the latest end of its labels, and it counts as **one** unit. The rule is
   applied mechanically by the evaluator, never chosen after seeing a prediction.
@@ -260,8 +263,8 @@ long). That is measured separately, not by failing the hit, because concurrent w
 while the tomatoes cook) and waiting that is part of the job (the pan heating) are normal:
 
 Secondary:
-- **Clip focus** (matched steps): the judge answers whether the clip contains a stretch of ≥ 10 s that
-  belongs to a **different, non-concurrent** labelled step (a label that does not overlap *g* in time).
+- **Clip focus** (matched steps): computed from the label intervals, no judge: whether the clip holds
+  ≥ 10 s of a **different, non-concurrent** labelled step (a label that does not overlap *g* in time).
   Reported as the share of matched clips without such a stretch. Concurrent labels and waiting inside
   *g*'s own interval never count against it.
 - **Merge-tolerant hit F1:** the same rule on coarse units (3.4). For a merged unit the judge must
@@ -283,7 +286,7 @@ Rubric, each item 0/1, per step:
 4. Instruction is actionable for a first-timer (imperative, specific, ≤ 2 sentences).
 
 **Judge input:** the whole step clip (video), the transcript turns inside the clip, the human label, and
-the guide step. The same call answers "same action" and "clip focus" for 4.1.
+the guide step. The same call answers "same action" for 4.1; clip focus is computed from labels.
 
 **Judge model:** open (section 8). A model other than Muse Spark avoids self-preference but adds cost and
 a dependency; either way the human check below is required.
@@ -306,8 +309,8 @@ Unmatched predicted steps: the user sees the step's clip and text, the labels th
 (any overlap) and the video's full label list, and answers whether one of those labels is the same
 action. A "yes" is a miss by the judge or the overlap rule, and is reported as such.
 
-What is scored on which item: "same action" on every pair and every unmatched step; "clip focus" and
-the 4 rubric items on accepted pairs only (a smaller denominator, e.g. 10 + 5 baseline).
+What is scored on which item: "same action" on every pair and every unmatched step; the 4 rubric
+items on accepted pairs only (a smaller denominator, e.g. 10 + 5 baseline).
 
 Rule, per domain and per judged item, on **that item's actual count n**: agreement is reported as a count
 (e.g. "same action 18/20", "done_when 9/10"). If disagreement is ≥ 15% of n, more items are drawn the same
@@ -377,21 +380,48 @@ model). The per-video difference is averaged over the 3 pairs; its range is the 
 1. Video only vs video + transcript (narrated set).
 2. Unseeded vs seeded with expert step names (labelled sets) — tells us how much of the earlier score
    came from the names.
-3. On-screen text extraction on vs off.
+3. On-screen text on vs off. "On" means the prompt asks the model to read text visible in the video
+   into `on_screen_text`; there is no separate OCR step. "Off" removes that instruction and the field.
 4. Audio in the video on vs off (earlier review experiments: off was better with Muse Spark 1.3).
+
+**Builder inputs are fixed** (`src/pr/build.py`), the same for app recordings and evaluation: the video
+(5 fps proxy with the clock, sound removed unless ablation 4), its duration, the transcript turns when
+transcript is on (transcribed from the **original** audio before the proxy is muted), the category
+taxonomy, and the instructor's Mark step times when the app sends them. Nothing derived from labels or
+task config goes in: no step count, no task name, no `keysteps`, no `object_prompts`, except the names
+in ablation 2. `inputs_provided` and `provenance.prompt_version` record the configuration of every run.
 
 ## 7. Iteration protocol (B2–B4)
 
-One round = change one thing → run dev 3× → metrics table (`results/summary_guides_dev.md`) →
-Codex review → decide. Rounds planned: baseline (B2), 2–3 iterations (B3), freeze and test (B4).
+One round = change one thing → run the **iterate set** 3× → metrics table
+(`results/summary_guides_dev.md`) → Codex review → decide. The iterate set (`config/splits.yaml`) is every
+correct/normal take of the dev participants plus one fixed take with mistakes per dev participant (PC 12 +
+4, drill 18 + 5, omelet 4 + 2) and the narrated dev videos. The full dev set (76 labelled takes + narrated
+dev) is run at the B2 baseline and once before the freeze. Cost and time per round are measured at the
+B2 baseline, not assumed.
+
+**Early judge check (dev):** after the B2 baseline, the user blind-scores 30 dev items drawn as in 4.2
+(10 per labelled domain, baseline items mixed in), so a judge that favours its own model's output is
+found before B3 tunes against it, not at B4. Rounds planned: baseline (B2), 2–3 iterations (B3), freeze and test (B4).
 Stopping rule: freeze on 2026-11-01 regardless of results; report test numbers as they are.
 
 ## 8. Open questions
 
-1. Judge model for 4.1 "same action" and 4.2 (Muse Spark, or another model family).
+1. ~~Judge model~~ — closed 2026-10-28: Muse Spark (it takes the clip video directly), with the early dev
+   check in §7 and the B4 human check.
 2. Whether to add HoloAssist (CDLA-Permissive-2.0) to the license list (3.2).
 3. Whether 2 narrated test videos (one per domain) are enough for the demo claim, or B1 should find a
    third (another domain, e.g. maintenance).
+
+## 8a. Changes after the B2 design review (2026-10-28)
+
+- Iterate set adds one fixed mistake take per dev participant; full dev at baseline and before freeze.
+- Builder inputs fixed and free of label-derived data (no step count, task name, keysteps, objects).
+- On-screen text = the model reads it from the video; transcript taken from the original audio.
+- Early blind judge check on 30 dev items after the B2 baseline.
+- Repeated labels in one video: merges applied left to right on consecutive runs.
+- Clip focus computed from label intervals instead of asked of the judge (deterministic, one less judged item).
+- Judge model: Muse Spark, a separate call and prompt from the builder (§8 question 1 closed).
 
 ## 9. Changes from v3 (Codex review #3)
 

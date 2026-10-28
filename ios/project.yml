@@ -48,6 +48,9 @@ targets:
         NSLocalNetworkUsageDescription: Lets your phone find and connect to your glasses over Wi-Fi.
         NSBonjourServices: [_bonjour._tcp]
         NSMicrophoneUsageDescription: Records your explanation while you work.
+        # The app talks to the Mac server over the local network (plain HTTP).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.procedurereplay.app

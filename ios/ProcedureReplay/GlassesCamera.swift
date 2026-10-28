@@ -1,8 +1,7 @@
-// A1 spike: simulated Ray-Ban Meta glasses (MockDeviceKit) stream a licensed video as the camera feed;
-// the app previews the frames and records them to an mp4.
-//
-// Launch with `--spike-autorun` to run the whole path unattended (start, record 5 s, stop) and write
-// Documents/spike_result.json, so it can be checked from the command line.
+// Glasses camera through the Meta Wearables Device Access Toolkit.
+// Without glasses, MockDeviceKit plays the bundled licensed video (glasses_feed.mp4, made by
+// scripts/make_mock_feed.sh) as the camera feed. It must be HEVC, portrait 540x960, 30 fps:
+// a square 10 fps file started the stream but delivered no frames.
 
 import AVFoundation
 import MWDATCamera
@@ -11,16 +10,31 @@ import MWDATMockDevice
 import Observation
 import UIKit
 
+/// The licensed video behind the mock feed: the upload inherits its license (server.store_upload).
+struct FeedSource: Decodable {
+  let videoId: String
+  let task: String
+
+  static let bundled: FeedSource? = {
+    guard let url = Bundle.main.url(forResource: "glasses_feed", withExtension: "json"),
+      let data = try? Data(contentsOf: url)
+    else { return nil }
+    let d = JSONDecoder()
+    d.keyDecodingStrategy = .convertFromSnakeCase
+    return try? d.decode(FeedSource.self, from: data)
+  }()
+}
+
 @Observable
 @MainActor
-final class GlassesSpike {
-  var status = "Idle"
+final class GlassesCamera {
+  enum State: Equatable { case idle, connecting, streaming, failed(String) }
+
+  var state = State.idle
   var frame: UIImage?
   var framesReceived = 0
-  var isRecording = false
-  var recordingURL: URL?
+  var recordingStarted: Date?
 
-  @ObservationIgnored private var glasses: MockGlasses?
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var camera: Camera?
   @ObservationIgnored private let tokens = ListenerTokenBag()
@@ -29,54 +43,40 @@ final class GlassesSpike {
   // if no device is active yet (DAT skills/display-access).
   @ObservationIgnored private let selector = AutoDeviceSelector(wearables: Wearables.shared)
 
-  func start() async {
+  var isRecording: Bool { recordingStarted != nil }
+
+  func connect() async {
+    guard state == .idle else { return }
+    state = .connecting
     do {
       MockDeviceKit.shared.enable()  // starts registered, with permissions granted
       let glasses = try MockDeviceKit.shared.pairGlasses(model: .rayBanMeta)
       glasses.powerOn()
       glasses.unfold()
       glasses.don()
-      // `--feed=<name>` picks another bundled mp4 (spike diagnostics).
-      let feedName = ProcessInfo.processInfo.arguments.first { $0.hasPrefix("--feed=") }?
-        .replacingOccurrences(of: "--feed=", with: "") ?? "glasses_feed"
-      guard let feed = Bundle.main.url(forResource: feedName, withExtension: "mp4") else {
-        status = "glasses_feed.mp4 missing: run scripts/make_mock_feed.sh"
+      guard let feed = Bundle.main.url(forResource: "glasses_feed", withExtension: "mp4") else {
+        state = .failed("glasses_feed.mp4 is missing: run scripts/make_mock_feed.sh")
         return
       }
       glasses.services.camera.setCameraFeed(fileURL: feed)
-      self.glasses = glasses
-
-      status = "Waiting for glasses"
       for await device in selector.activeDeviceStream() where device != nil { break }
       let session = try Wearables.shared.createSession(deviceSelector: selector)
       self.session = session
-      session.statePublisher.listen { [weak self] state in
-        Task { @MainActor in self?.sessionChanged(state) }
+      session.statePublisher.listen { [weak self] s in
+        Task { @MainActor in self?.sessionChanged(s) }
       }.store(in: tokens)
-      session.errorPublisher.listen { [weak self] error in
-        Task { @MainActor in self?.status = "Session error: \(error.localizedDescription)" }
-      }.store(in: tokens)
-      status = "Starting session"
       try session.start()
     } catch {
-      status = "Start failed: \(error)"
+      state = .failed("Couldn't connect to the glasses: \(error)")
     }
   }
 
-  @ObservationIgnored private var events: [String] = []
-
-  private func log(_ event: String) {
-    events.append(event)
-    status = event
-  }
-
-  private func sessionChanged(_ state: DeviceSessionState) {
-    log("session \(state)")
-    guard state == .started, camera == nil, let session else { return }
+  private func sessionChanged(_ s: DeviceSessionState) {
+    guard s == .started, camera == nil, let session else { return }
     do {
       let config = StreamConfiguration(videoCodec: .raw, resolution: .medium, frameRate: 15)
       guard let camera = try session.addCamera(config: config) else {
-        status = "addCamera returned nil"
+        state = .failed("The glasses camera didn't start")
         return
       }
       self.camera = camera
@@ -88,68 +88,34 @@ final class GlassesSpike {
           guard let self else { return }
           self.framesReceived += 1
           if let image { self.frame = image }
+          if self.state != .streaming { self.state = .streaming }
         }
       }.store(in: tokens)
-      camera.stream.errorPublisher.listen { [weak self] error in
-        Task { @MainActor in self?.log("stream error: \(error)") }
-      }.store(in: tokens)
-      camera.stream.statePublisher.listen { [weak self] state in
-        Task { @MainActor in self?.log("stream \(state)") }
-      }.store(in: tokens)
       camera.stream.start()
-      status = "Streaming"
     } catch {
-      status = "addCamera failed: \(error)"
+      state = .failed("The glasses camera didn't start: \(error)")
     }
   }
 
   func startRecording() {
-    let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      .appendingPathComponent("spike_recording.mp4")
-    try? FileManager.default.removeItem(at: url)
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("recording-\(UUID().uuidString).mp4")
     recorder.start(url: url)
-    isRecording = true
+    recordingStarted = Date()
   }
 
-  func stopRecording() async {
-    recordingURL = await recorder.stop()
-    isRecording = false
+  /// Finishes the file; nil if nothing was written.
+  func stopRecording() async -> URL? {
+    recordingStarted = nil
+    return await recorder.stop()
   }
 
-  func stop() {
+  func disconnect() {
     camera?.stop()
     session?.stop()
     camera = nil
     session = nil
-    status = "Stopped"
-  }
-
-  /// Unattended run for command-line verification.
-  func autorun() async {
-    await start()
-    for _ in 0..<40 where framesReceived == 0 { try? await Task.sleep(for: .milliseconds(250)) }
-    let firstFrameSeen = framesReceived > 0
-    startRecording()
-    try? await Task.sleep(for: .seconds(5))
-    await stopRecording()
-    var duration = 0.0
-    if let url = recordingURL {
-      duration = (try? await AVURLAsset(url: url).load(.duration).seconds) ?? 0
-    }
-    let result: [String: Any] = [
-      "status": status,
-      "events": events,
-      "arguments": Array(ProcessInfo.processInfo.arguments.dropFirst()),
-      "first_frame_seen": firstFrameSeen,
-      "frames_received": framesReceived,
-      "frame_size": frame.map { "\(Int($0.size.width))x\(Int($0.size.height))" } ?? "none",
-      "recording": recordingURL?.lastPathComponent ?? "none",
-      "recording_duration_s": duration,
-    ]
-    let out = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      .appendingPathComponent("spike_result.json")
-    try? JSONSerialization.data(withJSONObject: result, options: .prettyPrinted).write(to: out)
-    stop()
+    tokens.clear()
+    state = .idle
   }
 }
 

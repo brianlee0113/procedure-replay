@@ -13,7 +13,8 @@ struct ProcedureReplayApp: App {
 
   var body: some Scene {
     WindowGroup {
-      GlassesSpikeView()
+      RootView()
+        .preferredColorScheme(.light)
         .onOpenURL { url in
           Task { _ = try? await Wearables.shared.handleUrl(url) }
         }

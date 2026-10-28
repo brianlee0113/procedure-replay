@@ -13,11 +13,11 @@ Runs on the Mac next to the pipeline, so the Meta API key never leaves it. Endpo
     GET  /videos/{id}                        the uploaded recording, for evidence playback
 
 Guides (the app's main flow; contract in docs/B0_guide_eval_plan.md §2). The caller is named by the
-X-User header (default "me"); drafts are visible to their author only, private guides to anyone with
+X-User header (or ?user=, default "me"); drafts are visible to their author only, private guides to anyone with
 the id, public guides also appear in the feed.
 
     GET    /categories                       category taxonomy (id → label)
-    POST   /recordings                       multipart: video + source_video_id or license + creator → job
+    POST   /recordings                       multipart: video + source_video_id or license + creator (+ marks) → job
     GET    /jobs/{id}                        stages (upload, transcribe, read_text, split, write) + guide_id
     GET    /guides/{id}                      guide, meta, reactions, my progress
     PATCH  /guides/{id}/steps/{index}        author's Draft edit: text, or re-cut start_s / end_s
@@ -45,7 +45,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
-from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
@@ -239,7 +239,14 @@ STAGES = ("upload", "transcribe", "read_text", "split", "write")
 # The stand-in builder has nothing to wait for; a short pause per stage lets the app's Building screen show them.
 STAGE_DELAY_S = float(os.environ.get("PR_STAGE_DELAY_S", "0.6"))
 DEFAULT_CATEGORY = {"pc_repair": "repair_maintenance", "drill_bit": "workshop_tools", "home_cooking": "cooking"}
-USER = Header("me", alias="X-User")
+
+
+def current_user(x_user: str | None = Header(None, alias="X-User"), user: str | None = Query(None)) -> str:
+    """The X-User header, or ?user= for requests that cannot set headers (images loaded by the app)."""
+    return x_user or user or "me"
+
+
+USER = Depends(current_user)
 
 
 def read_json(path, default):
@@ -286,15 +293,25 @@ def categories() -> dict:
 @app.post("/recordings", status_code=202)
 def create_recording(task: str = Form(...), video: UploadFile = File(...), source_video_id: str | None = Form(None),
                      license: str | None = Form(None), creator: str | None = Form(None),
-                     author_name: str = Form("You"), user: str = USER) -> dict:
+                     author_name: str = Form("You"), marks: str | None = Form(None), user: str = USER) -> dict:
     job_id = uuid.uuid4().hex[:12]
     video_id = store_upload(f"app_rec_{job_id}", video, task, "reference", source_video_id, license, creator)
     job = {"id": job_id, "video_id": video_id, "task": task, "guide_id": f"g_{job_id}", "author": user,
            "author_name": author_name, "status": "queued", "created": guides.now(),
+           # seconds where the instructor tapped "Mark step" while recording; a hint for the B2 builder
+           "marks": parse_marks(marks),
            "stages": {s: ("done" if s == "upload" else "queued") for s in STAGES}}
     write_json(JOBS / f"{job_id}.json", job)
     worker.submit(run_job, job_id)
     return job
+
+
+def parse_marks(marks: str | None) -> list[float]:
+    try:
+        values = json.loads(marks) if marks else []
+        return sorted(float(v) for v in values)
+    except (ValueError, TypeError):
+        raise HTTPException(422, "marks must be a JSON list of seconds")
 
 
 @app.get("/jobs/{job_id}")

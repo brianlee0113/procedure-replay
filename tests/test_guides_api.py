@@ -29,11 +29,12 @@ r = api.post("/recordings", data={"task": "drill_bit", "license": "CC-BY-NC-4.0"
 assert r.status_code == 403, r.text
 
 # Upload → job → stages → guide.
-r = api.post("/recordings", data={"task": "drill_bit", "source_video_id": "07_u01_r02_c_01", "author_name": "Luis Ortega"},
+r = api.post("/recordings", data={"task": "drill_bit", "source_video_id": "07_u01_r02_c_01", "author_name": "Luis Ortega",
+                                  "marks": "[12.5, 3.0]"},
              files={"video": fake_video}, headers=LUIS)
 assert r.status_code == 202, r.text
 job = r.json()
-assert job["stages"]["upload"] == "done" and job["stages"]["split"] == "queued"
+assert job["stages"]["upload"] == "done" and job["stages"]["split"] == "queued" and job["marks"] == [3.0, 12.5]
 for _ in range(100):
     job = api.get(f"/jobs/{job['id']}").json()
     if job["status"] in ("done", "error"):
@@ -48,6 +49,7 @@ g = api.get(f"/guides/{gid}", headers=LUIS).json()
 assert g["meta"]["visibility"] == "draft" and g["guide"]["category"] == "workshop_tools"
 assert len(g["guide"]["steps"]) == 5 and g["guide"]["steps"][0]["clip_url"].endswith("/clips/1.mp4")
 assert api.get(f"/guides/{gid}", headers=MIN).status_code == 404
+assert api.get(f"/guides/{gid}?user=luis").status_code == 200  # images can't send headers
 assert api.get("/feed", headers=MIN).json() == []
 
 # Draft edit: text, then a re-cut that moves the loop clip; overlapping cuts are refused.

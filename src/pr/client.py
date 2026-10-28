@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 import random
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ RESULTS = ROOT / "results"
 COSTS_CSV = RESULTS / "costs.csv"
 FILE_CACHE = RESULTS / ".file_cache.json"
 BASE_URL = "https://api.meta.ai/v1"
+_files_lock = threading.Lock()  # runs in threads (scripts/run_guides.py) share the cost log and the upload cache
 
 # USD, from https://dev.meta.ai/docs/pricing-rate-limits (Oct 26, 2026). Text: per 1M tokens.
 TOKEN_PRICES = {
@@ -85,8 +87,8 @@ def log_cost(model: str, purpose: str, video_id: str, *, input_tokens=0, cached_
     else:
         usd = float("nan")
     RESULTS.mkdir(exist_ok=True)
-    new = not COSTS_CSV.exists()
-    with open(COSTS_CSV, "a", newline="") as f:
+    with _files_lock, open(COSTS_CSV, "a", newline="") as f:
+        new = f.tell() == 0
         w = csv.DictWriter(f, fieldnames=COST_FIELDS)
         if new:
             w.writeheader()
@@ -116,8 +118,9 @@ class MetaClient:
 
     def upload(self, path: Path) -> str:
         """Upload once per file content (sha256 cache); files expire after 7 days to stay under the team quota."""
-        cache = json.loads(FILE_CACHE.read_text()) if FILE_CACHE.exists() else {}
         digest = sha256_file(path)
+        with _files_lock:
+            cache = json.loads(FILE_CACHE.read_text()) if FILE_CACHE.exists() else {}
         if digest in cache:
             return cache[digest]
 
@@ -127,9 +130,11 @@ class MetaClient:
                                              expires_after={"anchor": "created_at", "seconds": 7 * 86400})
 
         file_id = _retry(do).id
-        cache[digest] = file_id
-        RESULTS.mkdir(exist_ok=True)
-        FILE_CACHE.write_text(json.dumps(cache, indent=1))
+        with _files_lock:  # re-read: another thread may have added entries meanwhile
+            cache = json.loads(FILE_CACHE.read_text()) if FILE_CACHE.exists() else {}
+            cache[digest] = file_id
+            RESULTS.mkdir(exist_ok=True)
+            FILE_CACHE.write_text(json.dumps(cache, indent=1))
         return file_id
 
     def sam_track(self, file_id: str, prompt: str, video_id: str, n_frames: int) -> str:

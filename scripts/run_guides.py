@@ -240,22 +240,28 @@ def main() -> None:
     todo = ([(v, task_of(v, manifest)) for v in args.videos.split(",")] if args.videos else videos_of(args.set))
     client = None if args.dry_run else MetaClient()
     t0 = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    jobs = [(v, t, k, base) for v, t in todo for k in runs for base in ([False] if args.no_baseline else [False, True])]
-    print(f"{len(todo)} videos × runs {runs} × {'main' if args.no_baseline else 'main + baseline'} = {len(jobs)} jobs")
+    kinds = [False] if args.no_baseline else [False, True]
+    print(f"{len(todo)} videos × runs {runs} × {'main' if args.no_baseline else 'main + baseline'} "
+          f"= {len(todo) * len(runs) * len(kinds)} jobs")
 
-    def work(job):
-        v, t, k, base = job
-        try:
-            r = run_one(v, t, cfg, k, base, args.dry_run, client)
-            print(f"  {'base' if base else 'main'} run{k} {v}: " +
-                  (f"step hit F1 {r['score']['step_hit']['f1']:.2f}" if r else "not cached"), flush=True)
-            return base, r
-        except Exception as e:  # one failed video must not stop a 3-hour run; it is listed at the end
-            print(f"  FAILED {'base' if base else 'main'} run{k} {v}: {type(e).__name__}: {e}", flush=True)
-            return base, {"failed": v}
+    def work(video):
+        """All runs of one video in one thread, so its proxy and transcript are made once, not raced."""
+        v, t = video
+        out = []
+        for k in runs:
+            for base in kinds:
+                try:
+                    r = run_one(v, t, cfg, k, base, args.dry_run, client)
+                    print(f"  {'base' if base else 'main'} run{k} {v}: " +
+                          (f"step hit F1 {r['score']['step_hit']['f1']:.2f}" if r else "not cached"), flush=True)
+                    out.append((base, r))
+                except Exception as e:  # one failed video must not stop a long run; it is listed at the end
+                    print(f"  FAILED {'base' if base else 'main'} run{k} {v}: {type(e).__name__}: {e}", flush=True)
+                    out.append((base, {"failed": v}))
+        return out
 
     with ThreadPoolExecutor(args.workers) as pool:
-        results = list(pool.map(work, jobs))
+        results = [r for per_video in pool.map(work, todo) for r in per_video]
     failed = [r["failed"] for _, r in results if r and "failed" in r]
     main_rows = [r for base, r in results if r and not base and "failed" not in r]
     base_rows = [r for base, r in results if r and base and "failed" not in r]

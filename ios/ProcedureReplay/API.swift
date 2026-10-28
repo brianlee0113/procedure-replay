@@ -74,6 +74,35 @@ enum API {
     let _: [String: AnyCodableValue] = try await send(r)
   }
 
+  static func feed(category: String? = nil) async throws -> [GuideCard] {
+    var r = request("feed")
+    if let category {
+      var c = URLComponents(url: r.url!, resolvingAgainstBaseURL: false)!
+      c.queryItems = [URLQueryItem(name: "category", value: category)]
+      r.url = c.url
+    }
+    return try await send(r)
+  }
+
+  static func library() async throws -> Library { try await send(request("library")) }
+
+  /// Category ids in taxonomy order (docs/B0_guide_eval_plan.md §4.3) with the server's labels.
+  static func categories() async throws -> [(id: String, label: String)] {
+    let labels: [String: String] = try await send(request("categories"))
+    let order = ["repair_maintenance", "electronics", "workshop_tools", "assembly", "cooking", "cleaning_household",
+                 "crafts", "other"]
+    let known = order.compactMap { id in labels[id].map { (id: id, label: $0) } }
+    let rest = labels.keys.filter { !order.contains($0) }.sorted().map { (id: $0, label: labels[$0]!) }
+    return known + rest
+  }
+
+  static func publish(guideId: String, _ body: PublishRequest) async throws -> GuideCard {
+    var r = request("guides/\(guideId)/publish", method: "POST")
+    r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    r.httpBody = try JSONEncoder().encode(body)
+    return try await send(r)
+  }
+
   static func editStep(guideId: String, index: Int, _ edit: StepEdit) async throws -> GuideStep {
     var r = request("guides/\(guideId)/steps/\(index)", method: "PATCH")
     r.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -181,4 +210,42 @@ struct StepEdit: Encodable {
     case startS = "start_s"
     case endS = "end_s"
   }
+}
+
+/// One guide in the Feed or Library, as `card()` in src/pr/server.py returns it.
+struct GuideCard: Decodable, Identifiable, Hashable {
+  let guideId: String
+  let title: String
+  let category: String
+  let categoryLabel: String
+  let steps: Int
+  let durationS: Double
+  let author: String
+  let authorName: String
+  let authorRole: String
+  let visibility: String
+  let publishedAt: String?
+  let coverUrl: String
+  var likes: Int
+  var saves: Int
+  var liked: Bool
+  var saved: Bool
+  // Library "continue" entries only
+  let step: Int?
+  let nextStepTitle: String?
+
+  var id: String { guideId }
+}
+
+struct Library: Decodable {
+  let `continue`: [GuideCard]
+  let saved: [GuideCard]
+  let mine: [GuideCard]
+}
+
+struct PublishRequest: Encodable {
+  let visibility: String  // private | public
+  let title: String
+  let summary: String
+  let category: String
 }

@@ -1,5 +1,5 @@
 // App shell: Feed and Library tabs with the record button in the middle (Figma B/TabBar).
-// Feed and Library get their content in A5; the record button opens the instructor flow.
+// The record button opens the instructor flow; publishing returns to the Feed (public) or Library (private).
 
 import SwiftUI
 
@@ -9,20 +9,27 @@ struct RootView: View {
   @State private var tab = Tab.feed
   @State private var flow: CreateFlow?
   @State private var openGuide: GuideLink?
+  @State private var reload = 0
 
   var body: some View {
     ZStack(alignment: .bottom) {
       Group {
         switch tab {
-        case .feed: Placeholder(title: "Feed", message: "Public guides will appear here.")
-        case .library: Placeholder(title: "Library", message: "Guides you saved and guides you recorded will appear here.")
+        case .feed: FeedView(reload: reload)
+        case .library: LibraryView(reload: reload)
         }
       }
       tabBar
     }
     .background(Color.canvas)
     .fullScreenCover(item: Binding(get: { flow.map(FlowBox.init) }, set: { flow = $0?.flow })) { box in
-      CreateFlowView(flow: box.flow) { flow = nil }
+      CreateFlowView(flow: box.flow) { published in
+        flow = nil
+        if let published {  // show the new guide where it now lives
+          tab = published.visibility == "public" ? .feed : .library
+          reload += 1
+        }
+      }
     }
     .fullScreenCover(item: $openGuide) { link in
       NavigationStack { GuideView(model: GuideModel(guideId: link.id), playing: link.autoplayStep) }
@@ -33,12 +40,29 @@ struct RootView: View {
       if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
         openGuide = GuideLink(id: id, autoplayStep: args.contains("--autorun-a4") ? 3 : nil)
       }
-      if args.contains("--autorun-a3") {
+      if args.contains("--autorun-a3") || args.contains("--autorun-a5") {
         let f = CreateFlow()
         flow = f
         await f.autorun()
+        if args.contains("--autorun-a5") { await autorunAfterPublish(f) }
       }
     }
+  }
+
+  /// `--autorun-a5`: after publishing, check the guide is in the Feed and in My guides, then show Library.
+  private func autorunAfterPublish(_ f: CreateFlow) async {
+    await f.autorunPublish()
+    try? await Task.sleep(for: .seconds(4))
+    let id = f.published?.guideId ?? "none"
+    let inFeed = (try? await API.feed())?.contains { $0.guideId == id } ?? false
+    let mine = (try? await API.library())?.mine.contains { $0.guideId == id } ?? false
+    tab = .library
+    try? await Task.sleep(for: .seconds(3))
+    let result: [String: Any] = ["guide_id": id, "visibility": f.published?.visibility ?? "none",
+                                 "tab_after_publish": "feed", "in_feed": inFeed, "in_my_guides": mine]
+    let out = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("a5_result.json")
+    try? JSONSerialization.data(withJSONObject: result, options: .prettyPrinted).write(to: out)
   }
 
   private var tabBar: some View {
@@ -79,28 +103,22 @@ private struct FlowBox: Identifiable {
   var id: ObjectIdentifier { ObjectIdentifier(flow) }
 }
 
-private struct Placeholder: View {
-  let title: String
-  let message: String
-
-  var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text(title).font(.largeTitle.bold()).foregroundStyle(Color.ink)
-      Text(message).font(.callout).foregroundStyle(Color.inkSecondary)
-      Spacer()
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .padding(16)
-  }
-}
-
 /// Record → Building → Draft in one full-screen flow.
 struct CreateFlowView: View {
   let flow: CreateFlow
-  let close: () -> Void
+  /// Called with the published card, or nil when the instructor closes without publishing.
+  let finish: (GuideCard?) -> Void
+
+  private func close() { finish(nil) }
 
   var body: some View {
     NavigationStack {
+      phaseView
+    }
+    .onChange(of: flow.published) { if let card = flow.published { finish(card) } }
+  }
+
+  @ViewBuilder private var phaseView: some View {
       switch flow.phase {
       case .record:
         RecordView(flow: flow, close: close)
@@ -118,6 +136,5 @@ struct CreateFlowView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.canvas)
       }
-    }
   }
 }

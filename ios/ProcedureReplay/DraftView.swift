@@ -36,8 +36,18 @@ struct DraftView: View {
           }
           .padding(.horizontal, 16)
           .padding(.top, 8)
-          .padding(.bottom, 40)  // A5 adds the "Next: publish settings" button here
+          .padding(.bottom, 110)
         }
+        Button { flow.showPublish = true } label: {
+          Text("Next: publish settings").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
+        }
+        .buttonStyle(.glassProminent)
+        .tint(Color.ink)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+      }
+      .navigationDestination(isPresented: Binding(get: { flow.showPublish }, set: { flow.showPublish = $0 })) {
+        PublishView(flow: flow)
       }
       .background(Color.canvas)
       .toolbar {

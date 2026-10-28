@@ -16,6 +16,9 @@ final class CreateFlow {
   var recordedSeconds = 0.0
   var job: Job?
   var guide: GuideResponse?
+  var showPublish = false
+  /// Set once the guide is published; the flow closes and the app shows it in the Feed or Library.
+  var published: GuideCard?
 
   /// Server stages in order, with what each one means for the instructor (Figma "Building" screen).
   static let stages: [(id: String, title: String, detail: String)] = [
@@ -86,6 +89,20 @@ final class CreateFlow {
     if let i = guide?.guide.steps.firstIndex(where: { $0.index == index }) {
       guide?.guide.steps[i] = updated
     }
+  }
+
+  func publish(_ body: PublishRequest) async throws {
+    guard let id = guide?.guide.guideId else { return }
+    published = try await API.publish(guideId: id, body)
+  }
+
+  /// `--autorun-a5`, after `autorun()`: open Publish, keep Meta AI's suggestions, publish as Public.
+  func autorunPublish() async {
+    guard phase == .draft, let g = guide?.guide else { return }
+    try? await Task.sleep(for: .seconds(1.5))
+    showPublish = true
+    try? await Task.sleep(for: .seconds(3))
+    try? await publish(PublishRequest(visibility: "public", title: g.title, summary: g.summary, category: g.category))
   }
 
   /// `--autorun-a3`: record 4 s with one Mark step, upload, follow the job, open the Draft, edit step 1,

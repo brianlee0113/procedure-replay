@@ -160,7 +160,7 @@ def summarize(which: str, cfg: Config, runs: list[int], main: list[dict], base: 
              f"judge = builder model (§4.2; human check pending). Means over runs, (min–max) across runs. "
              f"Step hit F1 is pooled over the domain's videos. Approx. API cost of this invocation: ${cost:.2f}.", ""]
     head = ("| domain | videos | step hit F1 | uniform+captions | paired diff (wins) | merge-tolerant F1 | IoU F1 | "
-            "uniform IoU F1 | granularity | boundary start/end s | length ratio | clip focus | rubric all 4 | "
+            "uniform IoU F1 | granularity (median) | boundary start/end s | length ratio | clip focus | rubric all 4 | "
             "category top-1 / top-2 | quotes given / dropped |")
     lines += [head, "|" + "---|" * (head.count("|") - 1)]
     for task in DOMAIN:

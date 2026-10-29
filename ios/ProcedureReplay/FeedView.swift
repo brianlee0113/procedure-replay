@@ -12,12 +12,22 @@ struct FeedView: View {
   @State private var error: String?
   @State private var loaded = false
   @State private var opened: GuideCard?
+  @State private var showSettings = false
 
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 14) {
-          Text("Feed").font(.largeTitle.bold()).foregroundStyle(Color.ink)
+          HStack {
+            Text("Feed").font(.largeTitle.bold()).foregroundStyle(Color.ink)
+            Spacer()
+            Button { showSettings = true } label: {
+              Image(systemName: "gearshape").font(.system(size: 17, weight: .semibold)).frame(width: 40, height: 40)
+            }
+            .glassEffect(.regular.interactive(), in: .circle)
+            .foregroundStyle(Color.ink)
+            .accessibilityLabel("Settings")
+          }
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
               CategoryChip(label: "All", selected: selected == nil) { selected = nil }
@@ -50,6 +60,7 @@ struct FeedView: View {
       .background(Color.canvas)
       .refreshable { await load() }
       .task(id: "\(reload)-\(selected ?? "all")") { await load() }
+      .sheet(isPresented: $showSettings, onDismiss: { Task { await load() } }) { SettingsView() }
       // Full screen, so the tab bar doesn't float over the guide.
       .fullScreenCover(item: $opened) { card in
         NavigationStack { GuideView(model: GuideModel(guideId: card.guideId)) }

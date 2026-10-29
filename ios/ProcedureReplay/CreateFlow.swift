@@ -35,10 +35,18 @@ final class CreateFlow {
     }
   }
 
-  /// Connects the glasses; with the simulated feed, also plays its narration through the glasses' recognizer.
+  let feedMode = AppSettings.feedMode
+  private var mic: PhoneMic?
+
+  /// Connects the glasses. With the iPhone camera, the iPhone mic listens too (captions, then the recording's
+  /// sound); with the demo feed, its narration plays through the glasses' recognizer.
   func connectGlasses() async {
-    await camera.connect()
-    if let source = FeedSource.bundled, let lines = try? await API.captions(sourceVideoId: source.videoId) {
+    await camera.connect(feed: feedMode)
+    if feedMode == .phoneCamera {
+      let mic = PhoneMic()
+      mic.onText = { [weak self] text, isFinal in self?.camera.hearFromPhone(text, isFinal: isFinal) }
+      if await mic.start() { self.mic = mic }
+    } else if let source = FeedSource.bundled, let lines = try? await API.captions(sourceVideoId: source.videoId) {
       camera.simulateNarration(lines, feedDuration: source.durationS ?? 0)
     }
   }
@@ -79,6 +87,7 @@ final class CreateFlow {
     } else {
       marks = []
       camera.startRecording()
+      mic?.startFile()
     }
   }
 
@@ -90,21 +99,31 @@ final class CreateFlow {
 
   func finishRecording() async {
     recordedSeconds = camera.recordingStarted.map { Date().timeIntervalSince($0) } ?? 0
-    let window = feedWindow()
+    let window = feedMode == .demoVideo ? feedWindow() : nil
     thumbnail = camera.frame
+    let micFile = mic?.stopFile()
+    mic?.stop()
+    mic = nil
     guard let file = await camera.stopRecording() else {
       phase = .failed("Nothing was recorded. Record for at least a second, then stop.")
       return
     }
     camera.disconnect()
-    guard let source = FeedSource.bundled else {
+    let source = FeedSource.bundled
+    if feedMode == .demoVideo && source == nil {
       phase = .failed("glasses_feed.json is missing: run scripts/make_mock_feed.sh")
       return
     }
     phase = .uploading
     do {
-      job = try await API.uploadRecording(file: file, task: source.task, sourceVideoId: source.videoId, marks: marks,
-                                          sourceWindow: window)
+      if feedMode == .phoneCamera {
+        job = try await API.uploadRecording(file: file, task: "app_recording", sourceVideoId: nil,
+                                            creator: AppSettings.creatorName, micAudio: micFile, marks: marks,
+                                            sourceWindow: nil)
+      } else if let source {
+        job = try await API.uploadRecording(file: file, task: source.task, sourceVideoId: source.videoId, marks: marks,
+                                            sourceWindow: window)
+      }
       phase = .building
       await followJob()
     } catch {

@@ -64,7 +64,8 @@ final class GlassesCamera {
 
   var isRecording: Bool { recordingStarted != nil }
 
-  func connect() async {
+  /// With `.phoneCamera`, MockDeviceKit's glasses use the iPhone's rear camera as their camera.
+  func connect(feed: FeedMode = AppSettings.feedMode) async {
     guard state == .idle else { return }
     state = .connecting
     do {
@@ -73,11 +74,19 @@ final class GlassesCamera {
       glasses.powerOn()
       glasses.unfold()
       glasses.don()
-      guard let feed = Bundle.main.url(forResource: "glasses_feed", withExtension: "mp4") else {
-        state = .failed("glasses_feed.mp4 is missing: run scripts/make_mock_feed.sh")
-        return
+      if feed == .phoneCamera {
+        guard await AVCaptureDevice.requestAccess(for: .video) else {
+          state = .failed("Allow camera access in Settings to use the iPhone as the glasses camera.")
+          return
+        }
+        glasses.services.camera.setCameraFeed(cameraFacing: .back)
+      } else {
+        guard let url = Bundle.main.url(forResource: "glasses_feed", withExtension: "mp4") else {
+          state = .failed("glasses_feed.mp4 is missing: run scripts/make_mock_feed.sh")
+          return
+        }
+        glasses.services.camera.setCameraFeed(fileURL: url)
       }
-      glasses.services.camera.setCameraFeed(fileURL: feed)
       self.glasses = glasses
       for await device in selector.activeDeviceStream() where device != nil { break }
       let session = try Wearables.shared.createSession(deviceSelector: selector)
@@ -182,6 +191,12 @@ final class GlassesCamera {
         try? await Task.sleep(for: .milliseconds(200))
       }
     }
+  }
+
+  /// Hands what the iPhone mic recognized to the simulated glasses' speech recognizer, so it reaches the app
+  /// through MWDATSpeech like real glasses speech.
+  func hearFromPhone(_ text: String, isFinal: Bool) {
+    glasses?.services.speech.simulateTranscription(text: text, isFinal: isFinal, confidence: 0.9)
   }
 
   /// A tap on the glasses' touchpad (mock glasses only), as the instructor would to mark a step.

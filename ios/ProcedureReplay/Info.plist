@@ -65,10 +65,14 @@
 	<array>
 		<string>_bonjour._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>With the iPhone standing in for the glasses, its camera records what you see.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Lets your phone find and connect to your glasses over Wi-Fi.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Records your explanation while you work.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Shows what you say as a live caption while you record.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>processing</string>

@@ -45,7 +45,8 @@ struct RecordView: View {
     VStack(alignment: .leading, spacing: 6) {
       HStack(spacing: 6) {
         Image(systemName: "mic.fill").foregroundStyle(Color.live)
-        Text(camera.captionSimulated ? "NARRATION · GLASSES SPEECH, SIMULATED" : "NARRATION · LIVE")
+        Text(camera.captionSimulated ? "NARRATION · GLASSES SPEECH, SIMULATED"
+             : flow.feedMode == .phoneCamera ? "NARRATION · LIVE (IPHONE MIC)" : "NARRATION · LIVE")
           .font(.eyebrow).foregroundStyle(Color.live)
       }
       Text("“\(text)”").font(.headline).foregroundStyle(.white).lineLimit(3)

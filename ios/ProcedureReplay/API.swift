@@ -4,7 +4,7 @@
 import Foundation
 
 enum API {
-  static let base = URL(string: ProcessInfo.processInfo.environment["PR_SERVER"] ?? "http://localhost:8000")!
+  static var base: URL { AppSettings.serverURL }
   static let user = ProcessInfo.processInfo.environment["PR_USER"] ?? "luis"
   static let userName = ProcessInfo.processInfo.environment["PR_USER_NAME"] ?? "Luis Ortega"
 
@@ -40,7 +40,11 @@ enum API {
 
   /// Upload a recording. `sourceVideoId` is the licensed video fed to the mock glasses, so the upload inherits
   /// its license at the server's license gate.
-  static func uploadRecording(file: URL, task: String, sourceVideoId: String, marks: [Double],
+  /// Upload a recording. With the demo feed, `sourceVideoId` names the licensed video fed to the mock glasses
+  /// (the upload inherits its license); with the iPhone camera, the recording is the instructor's own (`creator`,
+  /// CC BY 4.0) and `micAudio` carries their voice.
+  static func uploadRecording(file: URL, task: String, sourceVideoId: String?, creator: String? = nil,
+                              micAudio: URL? = nil, marks: [Double],
                               sourceWindow: (start: Double, end: Double)?) async throws -> Job {
     let boundary = "pr-\(UUID().uuidString)"
     var r = request("recordings", method: "POST")
@@ -51,7 +55,12 @@ enum API {
       body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"\(name)\"\r\n\r\n\(value)\r\n".data(using: .utf8)!)
     }
     field("task", task)
-    field("source_video_id", sourceVideoId)
+    if let sourceVideoId {
+      field("source_video_id", sourceVideoId)
+    } else if let creator {
+      field("license", "CC-BY-4.0")
+      field("creator", creator)
+    }
     field("author_name", userName)
     field("marks", "[" + marks.map { String(format: "%.2f", $0) }.joined(separator: ",") + "]")
     if let w = sourceWindow {
@@ -60,6 +69,10 @@ enum API {
     }
     body.append("--\(boundary)\r\nContent-Disposition: form-data; name=\"video\"; filename=\"recording.mp4\"\r\nContent-Type: video/mp4\r\n\r\n".data(using: .utf8)!)
     body.append(try Data(contentsOf: file))
+    if let micAudio {
+      body.append("\r\n--\(boundary)\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"mic.caf\"\r\nContent-Type: audio/x-caf\r\n\r\n".data(using: .utf8)!)
+      body.append(try Data(contentsOf: micAudio))
+    }
     body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
     r.httpBody = body
     return try await send(r)

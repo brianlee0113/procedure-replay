@@ -18,7 +18,8 @@ the id, public guides also appear in the feed.
 
     GET    /categories                       category taxonomy (id → label)
     GET    /sources/{video_id}/transcript    timed turns of a licensed video (feeds the simulated glasses speech)
-    POST   /recordings                       multipart: video + source_video_id or license + creator (+ marks) → job
+    POST   /recordings                       multipart: video (+ audio from the phone mic) + source_video_id or
+                                             license + creator (+ marks) → job
     GET    /jobs/{id}                        stages (upload, transcribe, read_text, split, write) + guide_id
     GET    /guides/{id}                      guide, meta, reactions, my progress
     PATCH  /guides/{id}/steps/{index}        author's Draft edit: text, or re-cut start_s / end_s
@@ -46,6 +47,7 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
@@ -290,6 +292,9 @@ def run_job(job_id: str) -> None:
         if window := job.get("simulate"):  # cut the licensed source here, not in the upload request (it re-encodes)
             set_stage("upload")
             job["simulated_from"] = simulated_capture(job["video_id"], **window)
+        if mic := job.get("mic_audio"):  # the phone's microphone becomes the recording's sound
+            set_stage("upload")
+            add_mic_audio(job["video_id"], ROOT / mic)
         guide = build_guide(job, set_stage)
         guides.save(guide, guides.Meta(author=job["author"], author_name=job["author_name"], job_id=job_id))
         job.update(status="done", stages={s: "done" for s in STAGES}, finished=guides.now())
@@ -338,7 +343,7 @@ def create_recording(task: str = Form(...), video: UploadFile = File(...), sourc
                      license: str | None = Form(None), creator: str | None = Form(None),
                      author_name: str = Form("You"), marks: str | None = Form(None),
                      source_start_s: float | None = Form(None), source_end_s: float | None = Form(None),
-                     user: str = USER) -> dict:
+                     audio: UploadFile | None = File(None), user: str = USER) -> dict:
     job_id = uuid.uuid4().hex[:12]
     video_id = store_upload(f"app_rec_{job_id}", video, task, "reference", source_video_id, license, creator)
     window = None
@@ -346,12 +351,18 @@ def create_recording(task: str = Form(...), video: UploadFile = File(...), sourc
         if source_end_s - max(0.0, source_start_s) < 1.0:
             raise HTTPException(422, f"source window {source_start_s:.1f}–{source_end_s:.1f} s is shorter than a second")
         window = {"source_video_id": source_video_id, "start_s": source_start_s, "end_s": source_end_s}
+    audio_path = None
+    if audio is not None and audio.filename:  # the phone's microphone, recorded alongside the glasses video
+        audio_path = UPLOADS / f"{video_id}_mic{Path(audio.filename).suffix or '.m4a'}"
+        with open(audio_path, "wb") as f:
+            shutil.copyfileobj(audio.file, f)
     job = {"id": job_id, "video_id": video_id, "task": task, "guide_id": f"g_{job_id}", "author": user,
            "author_name": author_name, "status": "queued", "created": guides.now(),
            # seconds where the instructor tapped "Mark step" while recording; a hint for the B2 builder
            "marks": parse_marks(marks),
            "simulate": window,  # run_job turns the recording into this stretch of the source (simulated_capture)
-           "stages": {s: ("done" if s == "upload" and not window else "queued") for s in STAGES}}
+           "mic_audio": str(audio_path.relative_to(ROOT)) if audio_path else None,  # run_job muxes it in
+           "stages": {s: ("done" if s == "upload" and not window and not audio_path else "queued") for s in STAGES}}
     write_json(JOBS / f"{job_id}.json", job)
     worker.submit(run_job, job_id)
     return job
@@ -375,6 +386,19 @@ def simulated_capture(video_id: str, source_video_id: str, start_s: float, end_s
     if dest.suffix != ".mp4":  # the manifest row points at the stored file; keep it valid
         dest.with_suffix(".mp4").rename(dest)
     return {"source_video_id": source_video_id, "start_s": round(start, 2), "end_s": round(end, 2)}
+
+
+def add_mic_audio(video_id: str, mic: Path) -> None:
+    """MockDeviceKit's camera stream is video only; when the iPhone stands in for the glasses, its microphone
+    records the instructor separately. Put that track into the recording (both start together in the app)."""
+    from pr.frames import run
+
+    dest = local_path(find_row(video_id))
+    muxed = dest.with_name(f"{dest.stem}_withmic.mp4")
+    run(["ffmpeg", "-v", "error", "-y", "-i", str(dest), "-i", str(mic), "-map", "0:v:0", "-map", "1:a:0",
+         "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest", "-movflags", "+faststart", str(muxed)])
+    dest.rename(dest.with_name(f"{dest.stem}_silent{dest.suffix}"))
+    muxed.rename(dest)
 
 
 def parse_marks(marks: str | None) -> list[float]:

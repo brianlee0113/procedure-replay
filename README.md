@@ -10,12 +10,46 @@ guides appear in a feed where people can like and save them. The same app covers
 changing a drill bit) and everyday tasks (cooking, fixing a faucet).
 
 An earlier part of the project, still in this repo, checks a trainee's own video against a guide and flags
-**skipped** or **out-of-order** steps (Pipeline and evaluation below).
+**skipped** or **out-of-order** steps (Trainee review pipeline below).
 
 Built for the Meta Global AI Developer Hackathon (indie track, "Push the Frontier", manufacturing),
 Oct 26 – Nov 4, 2026.
 
-## Pipeline
+## Guide builder and its evaluation
+
+`pr.build` turns one video into a guide (contract v1) with a single Muse Spark 1.3 call. The app's recordings
+and the evaluation go through the same function. It sees only the video (5 fps proxy with a burned-in clock,
+muted unless the config turns audio on), its duration, the narration's transcript turns (Muse Voice
+Transcribe), the category list and the instructor's "Mark step" times. Nothing derived from the labels goes in:
+no step count, task name, keysteps or object list. Post-processing sorts the steps, clamps and pads the clips,
+cuts overlaps and drops quotes that aren't in the transcript; the raw answer is kept.
+
+`scripts/run_guides.py` scores the guides against the datasets' step labels (plan: [docs/B0_guide_eval_plan.md](docs/B0_guide_eval_plan.md)):
+
+- **Step hit F1.** Muse Spark judges each predicted step against its candidate labels (same action?), and
+  pairs are matched one to one. Also reported: a judge-free temporal IoU F1, boundaries, clip focus, a
+  4-question rubric per step, category accuracy.
+- **Baselines.** "Uniform + captions" cuts the video into equal parts, one per labelled step.
+- **Splits** (`config/splits.yaml`): `iterate` for changes, `dev` to compare configurations, `test` once with
+  the frozen configuration (`--i-am-at-b4`).
+
+Dev set (76 videos × 3 runs, config `tr-ost-mute`, about $4.4 of API calls), step hit F1 pooled per domain:
+
+| Domain | Videos | Guide builder | Uniform + captions | Videos where the builder wins | Temporal IoU F1 (builder / uniform) |
+| --- | --- | --- | --- | --- | --- |
+| PC repair | 32 | 0.44 | 0.25 | 30/32 | 0.74 / 0.66 |
+| Drill bit | 35 | 0.57 | 0.37 | 23/35 | 0.76 / 0.66 |
+| Omelet | 9 | 0.39 | 0.15 | 7/9 | 0.62 / 0.49 |
+
+The judge is the builder's own model, so `scripts/judge_check.py` draws 30 items for a blind human check. Every
+one of the 15 disagreements was the judge saying No where the human said Yes. That suggests the scores above
+are, if anything, too low. "Same action" and "done when is observable" disagree 15% or more in every domain,
+so those two scores need more human review before they can be trusted alone. `scripts/compare_configs.py`
+compares configurations from stored results (paired per video, sign test, bootstrap interval). In the first
+round, dropping the on-screen-text instruction made no difference; turning the audio on helped PC repair by
++0.05 F1 and didn't help the other two. No configuration is frozen yet, and the test set hasn't been opened.
+
+## Trainee review pipeline (earlier part)
 
 ```
 expert's step names ─┐
@@ -52,23 +86,38 @@ uv run python -m pr.license_check
 ## iPhone app
 
 SwiftUI, iOS 26 (Liquid Glass), with the [Meta Wearables Device Access Toolkit](https://github.com/facebook/meta-wearables-dat-ios)
-1.0.1. Without glasses, its **MockDeviceKit** plays a licensed video as the glasses' camera feed; the demo says so.
-The app talks to the Mac server (`src/pr/server.py`), so the Meta API key never leaves the Mac.
+1.0.1. The app talks to the Mac server (`src/pr/server.py`), so the Meta API key never leaves the Mac.
+
+What plays the glasses (Settings, gear on Record):
+
+- **iPhone camera + mic** (default on a device). The iPhone, worn on the head or chest, stands in for the
+  glasses. Its microphone records the instructor and runs on-device speech recognition for the live caption.
+  The server merges that track into the glasses video before building the guide.
+- **Demo video** (default in the simulator). **MockDeviceKit** plays a licensed video as the glasses' camera
+  feed, and the demo says so.
+
+Settings also holds the server URL (with a connection test) and the creator name credited on recordings.
 
 | Screen | What it does |
 | --- | --- |
-| Record | The glasses' view, REC time, "Mark step"; stopping uploads the recording |
+| Record | The glasses' view, REC time, live narration caption, "Mark step" (or a tap on the glasses); stopping uploads the recording |
 | Building | The server job's stages: upload → transcribe → read on-screen text → split into steps → write instructions |
 | Draft | Meta AI's title, summary and steps; the instructor edits a step's words or re-cuts its start/end |
 | Publish | Title, category and description arrive filled in ("AI suggested"); Public or Private |
 | Feed | Public guides, newest first, by category; like and save |
 | Guide · Step player | A trainee's view: each step's clip loops with its instruction, "done when" and the instructor's quote |
+| Lens mode | Sends the current step to Meta Ray-Ban Display glasses: "Step n of N", instruction, "done when", Back / Next / Replay; the trainee can also say "next", "back" or "replay" |
 | Library | Continue where you stopped, saved guides, your own guides and who can see them |
 
-MockDeviceKit sends video only, so the app's own capture is silent. The app records which stretch of the feed
+Glasses speech (MWDATSpeech) and inputs (MWDATInputs) are experimental DAT capabilities. Recording and the
+lens buttons work without them. Without hardware, MockDeviceKit pairs simulated Display glasses, and the step
+player draws their lens in the corner as "Simulated lens".
+
+In demo-video mode, MockDeviceKit sends video only, so the app's own capture is silent. The app records which stretch of the feed
 video played while it recorded, and the server stores that stretch of the licensed source, with its sound, as
 the recording (`simulated_capture` in `src/pr/server.py`). The guide is then built from the recording as it
-would be from real glasses.
+would be from real glasses. It also plays the feed video's transcript through the mock speech recognizer
+(`GET /sources/{video_id}/transcript`), labelled "glasses speech, simulated".
 
 Run it:
 
@@ -81,7 +130,11 @@ cd ios && xcodegen && open ProcedureReplay.xcodeproj   # then run on an iOS 26 s
 
 Launch arguments for unattended checks, each writing a JSON result into the app's Documents folder:
 `--autorun-a3` (record → Draft), `--autorun-a5` (… → publish), `--autorun-e2e` (… → open from the Feed → play →
-Library; `PR_AUTORUN_RECORD_S` sets the recording length), `--open-guide=<id>`, `--open-draft=<id>`.
+Library; `PR_AUTORUN_RECORD_S` sets the recording length), `--autorun-lens` (lens mode, Next on the lens and
+by voice), `--open-guide=<id>`, `--open-draft=<id>`. `PR_SERVER` and `PR_FEED` (`phoneCamera` / `demoVideo`)
+override Settings.
+
+On an iPhone: run the server with `--host 0.0.0.0` and put the Mac's address (`http://<mac-ip>:8000`) in Settings.
 
 ## Data
 
@@ -147,6 +200,15 @@ uv run python scripts/run_eval.py --set dev     # dev set: data/ground_truth_dev
 uv run python scripts/run_eval.py --set dev --runs 1,2,3   # 3 independent reviews per video + majority vote
 uv run python scripts/run_eval.py --set dev --with-audio      # experiment: review with the sound (old default)
 uv run python tests/test_score.py && uv run python tests/test_judge.py && uv run python tests/test_vote.py
+
+# guide builder evaluation (results/guide_runs/, summary in results/summary_guides_<set>.md)
+uv run python scripts/run_guides.py --set iterate               # a round of changes
+uv run python scripts/run_guides.py --set dev --runs 1,2,3      # compare configurations
+uv run python scripts/run_guides.py --set iterate --dry-run     # score cached results only, no API calls
+uv run python scripts/compare_configs.py --set iterate --ref tr-ost-mute tr-noost-mute tr-ost-audio
+uv run python scripts/judge_check.py draw                       # blind human check of the judge
+for t in tests/test_build.py tests/test_contract.py tests/test_guide_eval.py tests/test_guides_api.py \
+         tests/test_simulated_capture.py tests/test_mic_audio.py; do uv run python $t; done
 ```
 
 **Dev / test split.** Prompts and pipeline changes are tuned on the dev set only: flaws injected into
@@ -202,8 +264,12 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | `scripts/smoke_*.py` | API smoke tests | day 1 |
 | `src/pr/score.py`, `tests/test_*.py` | Scoring rule (detected / false flag / extra flags) + checks for scoring, judging, voting | day 1–2 |
 | `scripts/run_eval.py` | Runs the pipeline and scores it against the dev or test ground truth; per run, first pass vs re-check, and vote | day 1–2 |
-| `src/pr/server.py`, `src/pr/guides.py` | Local HTTP server for the iPhone app: recording upload through the license gate (and the simulated glasses capture), build jobs, guides (contract v1), Draft edits and re-cuts, publish, feed, likes, saves, library, step clips and covers | day 2–3 |
-| `ios/` | iPhone app: glasses capture (MockDeviceKit), Record → Building → Draft → Publish, Feed, Guide and Step player, Library | day 2–3 |
+| `src/pr/server.py`, `src/pr/guides.py` | Local HTTP server for the iPhone app: recording upload through the license gate (and the simulated glasses capture), build jobs, guides (contract v1), Draft edits and re-cuts, publish, feed, likes, saves, library, step clips and covers, feed transcripts, phone mic track merge | day 2–4 |
+| `src/pr/transcribe.py` | Muse Voice Transcribe: narration turns with times | day 2 |
+| `src/pr/build.py` | One-call guide builder (app recordings and evaluation) with post-processing and quote check | day 3 |
+| `src/pr/guide_eval.py`, `src/pr/guide_judge.py` | Guide scoring against step labels (step hit F1, IoU F1, boundaries, clip focus) and the per-step Muse Spark judge | day 3 |
+| `scripts/run_guides.py`, `scripts/compare_configs.py`, `scripts/judge_check.py` | Guide evaluation runs with baselines, paired config comparison, blind human check of the judge | day 3–4 |
+| `ios/` | iPhone app: glasses capture (MockDeviceKit or the iPhone's camera + mic), live captions and glasses taps, Record → Building → Draft → Publish, Feed, Guide and Step player, Display lens mode with voice commands, Library, Settings | day 2–4 |
 | `scripts/make_mock_feed.sh`, `scripts/seed_guides.py` | Glasses feed from a licensed video; demo guides | day 2–3 |
 | `scripts/render_demo.py` | Annotated demo video + results table | TODO |
 
@@ -219,10 +285,14 @@ All code in this repository was written Oct 26 – Nov 4, 2026, starting from an
 | [numpy](https://numpy.org) | BSD-3-Clause | Arrays |
 | [PyYAML](https://pyyaml.org) | MIT | Config |
 | [python-dotenv](https://github.com/theskumar/python-dotenv) | BSD-3-Clause | `.env` loading |
+| [FastAPI](https://fastapi.tiangolo.com) | MIT | Local server for the iPhone app |
+| [uvicorn](https://www.uvicorn.org) | BSD-3-Clause | Runs the server |
+| [python-multipart](https://github.com/Kludex/python-multipart) | Apache-2.0 | Recording uploads |
+| [Meta Wearables Device Access Toolkit](https://github.com/facebook/meta-wearables-dat-ios) | [Meta Wearables Developer Terms](https://wearables.developer.meta.com/terms) | Glasses camera, speech, inputs, Display lens (iOS) |
 | [FFmpeg](https://ffmpeg.org) (CLI, not bundled) | LGPL/GPL | Proxy encoding, cuts, swaps |
 | [uv](https://github.com/astral-sh/uv) | Apache-2.0 / MIT | Environment management |
 
-**Models** (via [Meta Model API](https://dev.meta.ai/docs)): Muse Spark 1.3 (`muse-spark-1.3-contributor`), SAM 3.1 (`sam-3.1`).
+**Models** (via [Meta Model API](https://dev.meta.ai/docs)): Muse Spark 1.3 (`muse-spark-1.3-contributor`), Muse Voice Transcribe (`muse-voice-transcribe-1.0`), SAM 3.1 (`sam-3.1`).
 
 **Videos**: [IndEgo](https://huggingface.co/datasets/FraunhoferIPK/IndEgo), Fraunhofer IPK (Chavan et al., NeurIPS 2025),
 CC BY 4.0, recorded on Project Aria glasses. Keystep and mistake labels are IndEgo's.

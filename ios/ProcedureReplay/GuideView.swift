@@ -68,9 +68,18 @@ struct GuideView: View {
           HStack(spacing: 6) {
             MetaChip(systemImage: "list.bullet", text: "\(guide.steps.count) steps")
             MetaChip(systemImage: "clock", text: clock(guide.durationS))
-            if !guide.tools.isEmpty {
-              MetaChip(systemImage: "wrench.and.screwdriver", text: guide.tools.joined(separator: ", ").capitalizedFirst)
+          }
+          if !guide.tools.isEmpty {
+            // One chip per tool, wrapping, so a long tool list doesn't stretch the steps/time row.
+            VStack(alignment: .leading, spacing: 8) {
+              Eyebrow(text: "Tools", color: Color.inkSecondary)
+              FlowLayout(spacing: 6) {
+                ForEach(guide.tools, id: \.self) { tool in
+                  MetaChip(systemImage: "wrench.and.screwdriver", text: tool.capitalizedFirst)
+                }
+              }
             }
+            .padding(.top, 4)
           }
           actions(response)
           HStack {
@@ -98,14 +107,18 @@ struct GuideView: View {
 
   private func hero(_ guide: Guide) -> some View {
     ZStack(alignment: .top) {
-      AsyncImage(url: API.url("/guides/\(guide.guideId)/cover.jpg")) { image in
-        image.resizable().scaledToFill()
-      } placeholder: {
-        Color.track
-      }
-      .frame(height: 340)
-      .frame(maxWidth: .infinity)
-      .clipped()
+      // The cover fills a fixed frame as an overlay, so a wide image can't widen the page.
+      Color.track
+        .frame(maxWidth: .infinity)
+        .frame(height: 340)
+        .overlay {
+          AsyncImage(url: API.url("/guides/\(guide.guideId)/cover.jpg")) { image in
+            image.resizable().scaledToFill()
+          } placeholder: {
+            Color.track
+          }
+        }
+        .clipped()
       .overlay {
         LinearGradient(stops: [.init(color: .black.opacity(0.35), location: 0), .init(color: .clear, location: 0.3),
                                .init(color: Color.canvas.opacity(0.6), location: 0.7), .init(color: Color.canvas, location: 1)],

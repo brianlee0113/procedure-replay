@@ -11,6 +11,7 @@ final class LoopingPlayer {
   var failed: String?
   var elapsed = 0.0
   var duration = 0.0
+  var isPaused = false
   var loops = true {
     didSet { if !loops { looper?.disableLooping() } else if oldValue == false { restart() } }
   }
@@ -41,9 +42,10 @@ final class LoopingPlayer {
     restart()
   }
 
-  /// Starts the clip from the beginning (the Replay button).
+  /// Starts the clip from the beginning (a new step, Loop turned back on, or Replay on the lens).
   func restart() {
     guard let url else { return }
+    isPaused = false
     looper?.disableLooping()
     player.removeAllItems()
     let item = AVPlayerItem(url: url)
@@ -69,6 +71,17 @@ final class LoopingPlayer {
       }
     }
     player.play()
+  }
+
+  /// A tap on the middle of the video. A clip that played to its end (Loop off) starts over.
+  func togglePause() {
+    if isPaused {
+      isPaused = false
+      if player.currentItem == nil { restart() } else { player.play() }
+    } else {
+      isPaused = true
+      player.pause()
+    }
   }
 
   func stop() {

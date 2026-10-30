@@ -119,6 +119,14 @@ struct StepPlayerView: View {
       }
       LinearGradient(colors: [.black.opacity(0.55), .clear], startPoint: .top, endPoint: .center)
         .allowsHitTesting(false)
+      tapZones
+      if player.isPaused {
+        Image(systemName: "play.fill").font(.system(size: 30, weight: .semibold)).foregroundStyle(.white)
+          .frame(width: 72, height: 72)
+          .glassEffect(.regular, in: .circle)
+          .frame(maxHeight: .infinity)
+          .allowsHitTesting(false)
+      }
       VStack(spacing: 10) {
         progress
         topControls
@@ -128,12 +136,36 @@ struct StepPlayerView: View {
       }
       .padding(.horizontal, 16)
       .padding(.top, 58)
-      .padding(.bottom, 26)
+      .padding(.bottom, 26 + sheetOverlap)  // keep the scrubber above the sheet's rounded top
       .environment(\.colorScheme, .dark)
     }
     .frame(maxWidth: .infinity)
     .frame(height: 470)
     .clipped()
+  }
+
+  /// Like a story: tap the left third for the previous step, the middle to pause or resume, the right third for the next.
+  /// The buttons drawn on top keep their own taps.
+  private var tapZones: some View {
+    HStack(spacing: 0) {
+      Color.clear.contentShape(Rectangle()).onTapGesture { previous() }
+        .accessibilityHidden(true)
+      Color.clear.contentShape(Rectangle()).onTapGesture { player.togglePause() }
+        .accessibilityLabel(player.isPaused ? "Play" : "Pause")
+        .accessibilityAddTraits(.isButton)
+      Color.clear.contentShape(Rectangle()).onTapGesture { next() }
+        .accessibilityHidden(true)
+    }
+  }
+
+  private var isFirst: Bool { index == guide.steps.first?.index }
+
+  private func previous() {
+    if !isFirst { index -= 1 }
+  }
+
+  private func next() {
+    if isLast { dismiss() } else { index += 1 }
   }
 
   private var progress: some View {
@@ -245,18 +277,14 @@ struct StepPlayerView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
       }
+      // The clip loops on its own (Loop at the top), so the bottom row only moves between steps.
       HStack(spacing: 10) {
-        Button { index -= 1 } label: {
-          Image(systemName: "chevron.left").font(.headline).frame(width: 30, height: 30)
+        Button { previous() } label: {
+          Text("Previous").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
         }
         .buttonStyle(.glass)
-        .disabled(index == guide.steps.first?.index)
-        .accessibilityLabel("Previous step")
-        Button { player.restart() } label: {
-          Text("Replay").font(.headline).padding(.horizontal, 6).padding(.vertical, 6)
-        }
-        .buttonStyle(.glass)
-        Button { if isLast { dismiss() } else { index += 1 } } label: {
+        .disabled(isFirst)
+        Button { next() } label: {
           Text(isLast ? "Finish" : "Next step").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
         }
         .buttonStyle(.glassProminent)
@@ -267,11 +295,15 @@ struct StepPlayerView: View {
     .padding(.top, 20)
     .padding(.bottom, 8)
     .background {
-      UnevenRoundedRectangle(topLeadingRadius: 32, topTrailingRadius: 32).fill(Color.panel).ignoresSafeArea(edges: .bottom)
+      // Solid: the sheet overlaps the video, and the translucent panel let it show through as a gray band.
+      UnevenRoundedRectangle(topLeadingRadius: 32, topTrailingRadius: 32).fill(Color.white).ignoresSafeArea(edges: .bottom)
     }
-    .offset(y: -28)
-    .padding(.bottom, -28)
+    .offset(y: -sheetOverlap)
+    .padding(.bottom, -sheetOverlap)
   }
+
+  /// How far the instruction sheet rises over the bottom of the video.
+  private let sheetOverlap: CGFloat = 28
 }
 
 extension String {

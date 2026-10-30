@@ -496,3 +496,138 @@ on the watch page, checked on 2026-10-27.
 - Camera: first person (hands on the faucet), with burned-in captions; English narration. 1:20
 - Role: reference
 - Edits:
+
+### yt_Nw57QoYwfm8
+- Title: Honda Jazz 1.2 2005 Rear Brakepads replacement
+- Creator: John Bullas, https://www.youtube.com/channel/UCiYjDOtCm4ze2ewntH4xTWg
+- Source: https://www.youtube.com/watch?v=Nw57QoYwfm8
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:49. Feed sample (Repair)
+- Role: reference
+- Edits:
+
+### yt_btgBIQTVjnU
+- Title: How to Replace Your Motorcycle Chain
+- Creator: DMK Cycles, https://www.youtube.com/channel/UCrTvwpO2yH4vRKdME3yTFGQ
+- Source: https://www.youtube.com/watch?v=btgBIQTVjnU
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 7:59. Feed sample (Repair)
+- Role: reference
+- Edits:
+
+### yt_LlnmGlntshQ
+- Title: Lorus watch battery replacement how to
+- Creator: rninnim, https://www.youtube.com/channel/UCLRJwArLmWgoY-ttmstteWQ
+- Source: https://www.youtube.com/watch?v=LlnmGlntshQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 7:18. Feed sample (Repair)
+- Role: reference
+- Edits:
+
+### yt_-tjN6mRzxeI
+- Title: HOW TO WIRE A LIGHT SWITCH OR REPLACE A LIGHT SWITCH - SINGLE POLE - CASETA SMART SWITCH
+- Creator: Ultimate Tech Hub, https://www.youtube.com/channel/UChCs6TB5FoGFOYUfhtR0nRA
+- Source: https://www.youtube.com/watch?v=-tjN6mRzxeI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:31. Feed sample (Electronics)
+- Role: reference
+- Edits:
+
+### yt_v9x7FkXW6Mo
+- Title: Soldering the Binary Burst PCB
+- Creator: Mike Szczys, https://www.youtube.com/channel/UC_OfIgkiiW1akNw5adWtqrg
+- Source: https://www.youtube.com/watch?v=v9x7FkXW6Mo
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:30. Feed sample (Electronics)
+- Role: reference
+- Edits:
+
+### yt_hM1DB3h51pI
+- Title: 16mins of Carpentry POV - Framing Stud Walls on the Roof!
+- Creator: JoshKit Carpentry, https://www.youtube.com/channel/UCrN1sha8gmaVWtftOIjF2Sw
+- Source: https://www.youtube.com/watch?v=hM1DB3h51pI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 16:42. Feed sample (Workshop)
+- Role: reference
+- Edits:
+
+### yt_Js-RsIDYqCQ
+- Title: Complete Guide to Installing a Ceiling Fan
+- Creator: Aurora Lighting and Supply, https://www.youtube.com/channel/UCvB6RDYkYPqBlwy8K3UT51w
+- Source: https://www.youtube.com/watch?v=Js-RsIDYqCQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 14:25. Feed sample (Assembly)
+- Role: reference
+- Edits:
+
+### yt_-OMd7NDahOE
+- Title: How to make very cheap and strong shelving out of cardboard boxes
+- Creator: Bohemian Crafting, https://www.youtube.com/channel/UCVQiJtmsz7X9romg0RzUy4Q
+- Source: https://www.youtube.com/watch?v=-OMd7NDahOE
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:05. Feed sample (Assembly)
+- Role: reference
+- Edits:
+
+### yt_KrZdNqe-_5A
+- Title: How to Make Homemade Dumplings | Simple & Delicious Recipe
+- Creator: BiLi, https://www.youtube.com/channel/UCJLk3pxIpvg4wtaFMQc28JQ
+- Source: https://www.youtube.com/watch?v=KrZdNqe-_5A
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:29. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_D9rgH8mkelI
+- Title: How To Make Pour Over Coffee At Home (The Simple Method)
+- Creator: Flighted Wingspan, https://www.youtube.com/channel/UCVOjP_2o9FZlqKqBSqDKDSA
+- Source: https://www.youtube.com/watch?v=D9rgH8mkelI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:55. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_KVn12bf19mU
+- Title: How To Make Fresh Pasta Like An Italian Grandma!
+- Creator: LoveHateAndFood, https://www.youtube.com/channel/UC7K5Wy3HStha612eRjqxmyg
+- Source: https://www.youtube.com/watch?v=KVn12bf19mU
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 8:00. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_VVv5AirTJHQ
+- Title: How to Unclog a Kitchen Sink in 5 minutes
+- Creator: PakhtoonHalek, https://www.youtube.com/channel/UC8tzc-m-3HlTgNiOMCfirSQ
+- Source: https://www.youtube.com/watch?v=VVv5AirTJHQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:31. Feed sample (Household)
+- Role: reference
+- Edits:
+
+### yt_BCkjm1E-Oaw
+- Title: Pruning Tomato Plants
+- Creator: Ryan Heisler, https://www.youtube.com/channel/UCCm1zeh38Vyt-h9mfsK1STw
+- Source: https://www.youtube.com/watch?v=BCkjm1E-Oaw
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 9:06. Feed sample (Household)
+- Role: reference
+- Edits:
+
+### yt_vJ7qv-WOylc
+- Title: How to fix a button - How to sew on a button - Repair and tighten loose buttons with hand sewing
+- Creator: Cinderella Sew, https://www.youtube.com/channel/UCQMV2DDe25dUXY_vr8mZ56Q
+- Source: https://www.youtube.com/watch?v=vJ7qv-WOylc
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:09. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_pCqSCDIGiqM
+- Title: Wheel Throwing Basics - 5 steps to throwing POTS on the Potter's Wheel
+- Creator: Jonthepotter, https://www.youtube.com/channel/UCH2HYp8yVlUxHgDPkxW8-yg
+- Source: https://www.youtube.com/watch?v=pCqSCDIGiqM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 12:20. Feed sample (Crafts)
+- Role: reference
+- Edits:

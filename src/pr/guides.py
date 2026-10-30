@@ -23,6 +23,7 @@ from pr.client import RESULTS
 from pr.frames import grab_frame, probe, trim
 from pr.license_check import ROOT, find_row, local_path
 from pr.steps import CHECKLISTS, load_tasks
+from pr.transcribe import spoken
 
 APP = RESULTS / "app"
 GUIDES = APP / "guides"
@@ -197,7 +198,7 @@ def quote_errors(guide: Guide, transcript: dict | None = None) -> list[str]:
             errors.append(f"{where}: turn_ids {ids} are not consecutive turns of {len(turns)}")
             continue
         said = turns[ids[0]:ids[-1] + 1]
-        if (sim := quote_similarity(q.text, " ".join(t["text"] for t in said))) < QUOTE_MIN_SIMILARITY:
+        if (sim := quote_similarity(q.text, " ".join(spoken(t["text"]) for t in said))) < QUOTE_MIN_SIMILARITY:
             errors.append(f"{where}: quote not in turns {ids} (similarity {sim:.2f})")
         if abs(q.start_s - said[0]["start_s"]) > EPS or abs(q.end_s - said[-1]["end_s"]) > EPS:
             errors.append(f"{where}: quote times are not the bounds of turns {ids}")

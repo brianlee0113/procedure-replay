@@ -42,6 +42,14 @@ assert [d["index"] for d in g.provenance["dropped_quotes"]] == [3, 4], g.provena
 assert g.category_alternatives == ["repair_maintenance", "assembly"]
 assert g.inputs_provided["transcript"] and not g.inputs_provided["step_names"]
 
+# Speaker markers in the transcript never reach a quote: the model copies them from the turns.
+marked = {**TRANSCRIPT, "turns": [{**TRANSCRIPT["turns"][0], "text": "First unplug <|speaker_A|>  the drill, always."},
+                                  TRANSCRIPT["turns"][1]]}
+raw = copy.deepcopy(RAW)
+raw["steps"][1]["quote_text"] = "First unplug <|speaker_A|>  the drill"
+g = build(raw, transcript=marked)
+assert g.steps[0].quote.text == "First unplug the drill", g.steps[0].quote
+
 # Without a transcript every quote is dropped and recorded.
 g = build(RAW, transcript=None)
 assert all(s.quote is None for s in g.steps) and len(g.provenance["dropped_quotes"]) == 4

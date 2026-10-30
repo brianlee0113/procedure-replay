@@ -18,7 +18,7 @@ from dataclasses import asdict, dataclass
 from pr import guides
 from pr.client import MetaClient
 from pr.track import prepare
-from pr.transcribe import context_block, transcribe
+from pr.transcribe import context_block, spoken, transcribe
 
 PROMPT_VERSION = "b2-v1"
 MIN_STEP_S = 0.5  # shorter steps left after cutting overlaps are dropped
@@ -178,7 +178,7 @@ def postprocess(raw: dict, *, guide_id: str, video_id: str, duration: float, cfg
             if not (turns and ids and all(0 <= t < len(turns) for t in ids)):
                 dropped.append({"index": i, "reason": "no transcript turns to quote" if not turns else f"bad turn_ids {ids}"})
             else:
-                step.quote = guides.Quote(text=s["quote_text"], turn_ids=ids, start_s=turns[min(ids)]["start_s"],
+                step.quote = guides.Quote(text=spoken(s["quote_text"]), turn_ids=ids, start_s=turns[min(ids)]["start_s"],
                                           end_s=turns[max(ids)]["end_s"])
         out.append(step)
 

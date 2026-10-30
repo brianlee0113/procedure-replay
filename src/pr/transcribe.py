@@ -14,6 +14,7 @@ Results are cached in results/transcripts/<video_id>.json.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -31,6 +32,12 @@ MODEL = "muse-voice-transcribe-1.0"
 TRANSCRIPTS = RESULTS / "transcripts"
 CHUNK_S = 540
 SAMPLE_RATE = 24000
+SPEAKER = re.compile(r"<\|speaker_[^|]*\|>")  # speaker-change markers inside a turn's text, e.g. <|speaker_A|>
+
+
+def spoken(text: str) -> str:
+    """Turn text without speaker markers, as a person would read it (prompts, quotes)."""
+    return " ".join(SPEAKER.sub(" ", text).split())
 
 
 def _post(wav: bytes, key: str) -> dict:
@@ -102,7 +109,7 @@ def context_block(video: str) -> str:
     if not turns:
         return ""
     fmt = lambda s: f"{int(s // 60):02d}:{int(s % 60):02d}"
-    lines = "\n".join(f"#{i} [{fmt(t['start_s'])}–{fmt(t['end_s'])}] {t['text']}" for i, t in enumerate(turns))
+    lines = "\n".join(f"#{i} [{fmt(t['start_s'])}–{fmt(t['end_s'])}] {spoken(t['text'])}" for i, t in enumerate(turns))
     return ("\nWhat was said in the video (speech-to-text, times from the start of the video; it may contain "
             f"errors and is only a hint, the video is what counts):\n{lines}\n")
 

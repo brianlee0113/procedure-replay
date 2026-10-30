@@ -40,7 +40,6 @@ evaluation are unchanged.
 
 import json
 import os
-import re
 import shutil
 import threading
 import time
@@ -61,6 +60,7 @@ from pr.license_check import (APP_MANIFEST, FIELDS, ROOT, LicenseError, append_m
                               load_all, local_path, require_allowed)
 from pr.order import keystep_pairs
 from pr.steps import CHECKLISTS, load_tasks
+from pr.transcribe import SPEAKER
 
 UPLOADS = ROOT / "data" / "uploads"
 APP = RESULTS / "app"
@@ -328,7 +328,7 @@ def caption_lines(turns: list[dict]) -> list[dict]:
     those markers into caption lines and spread the turn's time over them by length (no word timestamps)."""
     lines = []
     for u in turns:
-        parts = [p.strip() for p in re.split(r"<\|speaker_[^|]*\|>", u["text"]) if p.strip()]
+        parts = [p.strip() for p in SPEAKER.split(u["text"]) if p.strip()]
         total = sum(len(p) for p in parts) or 1
         t = u["start_s"]
         for p in parts:

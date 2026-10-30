@@ -61,7 +61,7 @@ struct DraftView: View {
       }
       .navigationBarTitleDisplayMode(.inline)
       .fullScreenCover(isPresented: $previewing) {
-        NavigationStack { GuideView(model: GuideModel(guideId: guide.guideId)) }
+        NavigationStack { GuideView(model: GuideModel(guideId: guide.guideId)) }.edgeSwipeBack()
       }
       .sheet(item: $editing) { step in
         StepEditSheet(step: step, duration: guide.durationS) { edit in

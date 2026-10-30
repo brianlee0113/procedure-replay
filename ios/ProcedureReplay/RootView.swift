@@ -41,7 +41,7 @@ struct RootView: View {
       }
     }
     .fullScreenCover(item: $openGuide) { link in
-      NavigationStack { GuideView(model: GuideModel(guideId: link.id), playing: link.autoplayStep) }
+      NavigationStack { GuideView(model: GuideModel(guideId: link.id), playing: link.autoplayStep) }.edgeSwipeBack()
     }
     .task {
       let args = ProcessInfo.processInfo.arguments

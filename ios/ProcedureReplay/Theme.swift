@@ -96,3 +96,45 @@ struct Banner: View {
       .transition(.move(edge: .top).combined(with: .opacity))
   }
 }
+
+/// Swipe right from the left edge to go back, as on a pushed iPhone screen. Guides and the step player open as
+/// full-screen covers (so the tab bar doesn't float over them), which have no system back swipe. Apply it to the
+/// cover's root: the cover turns clear so the screen it slides off reveals the one behind.
+struct EdgeSwipeBack: ViewModifier {
+  @Environment(\.dismiss) private var dismiss
+  @State private var offset: CGFloat = 0
+  @State private var width: CGFloat = 400
+
+  private let edge: CGFloat = 30
+
+  func body(content: Content) -> some View {
+    content
+      .offset(x: offset)
+      .shadow(color: .black.opacity(offset > 0 ? 0.25 : 0), radius: 16)
+      .simultaneousGesture(
+        DragGesture(minimumDistance: 10, coordinateSpace: .global)
+          .onChanged { v in
+            guard v.startLocation.x < edge else { return }
+            offset = max(0, v.translation.width)
+          }
+          .onEnded { v in
+            guard v.startLocation.x < edge else { return }
+            if v.translation.width > width * 0.35 || v.predictedEndTranslation.width > width * 0.6 {
+              withAnimation(.easeOut(duration: 0.2)) { offset = width } completion: {
+                var t = Transaction()
+                t.disablesAnimations = true  // already off screen; skip the cover's slide-down
+                withTransaction(t) { dismiss() }
+              }
+            } else {
+              withAnimation(.spring(duration: 0.25)) { offset = 0 }
+            }
+          }
+      )
+      .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+      .presentationBackground(.clear)
+  }
+}
+
+extension View {
+  func edgeSwipeBack() -> some View { modifier(EdgeSwipeBack()) }
+}

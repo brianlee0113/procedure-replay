@@ -58,7 +58,7 @@ struct LibraryView: View {
       .task(id: reload) { await load() }
       // Full screen, so the tab bar doesn't float over the guide.
       .fullScreenCover(item: $opened) { o in
-        NavigationStack { GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step) }
+        NavigationStack { GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step) }.edgeSwipeBack()
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }
     }

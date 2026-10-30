@@ -48,7 +48,7 @@ struct GuideView: View {
     .task { if model.response == nil { await model.load() } }
     .fullScreenCover(item: Binding(get: { playing.map(StartStep.init) }, set: { playing = $0?.index })) { start in
       if let response = model.response {
-        StepPlayerView(guide: response.guide, startIndex: start.index)
+        StepPlayerView(guide: response.guide, startIndex: start.index).edgeSwipeBack()
       }
     }
   }

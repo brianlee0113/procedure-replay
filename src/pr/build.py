@@ -178,8 +178,9 @@ def postprocess(raw: dict, *, guide_id: str, video_id: str, duration: float, cfg
             if not (turns and ids and all(0 <= t < len(turns) for t in ids)):
                 dropped.append({"index": i, "reason": "no transcript turns to quote" if not turns else f"bad turn_ids {ids}"})
             else:
-                step.quote = guides.Quote(text=spoken(s["quote_text"]), turn_ids=ids, start_s=turns[min(ids)]["start_s"],
-                                          end_s=turns[max(ids)]["end_s"])
+                text = spoken(s["quote_text"])
+                _, start, end = guides.quote_times(text, turns[min(ids):max(ids) + 1])
+                step.quote = guides.Quote(text=text, turn_ids=ids, start_s=start, end_s=end)
         out.append(step)
 
     guide = guides.Guide(

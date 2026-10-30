@@ -3,7 +3,7 @@ No files or API calls. Run: uv run python tests/test_contract.py"""
 
 from pydantic import ValidationError
 
-from pr.guides import Guide, quote_errors
+from pr.guides import Guide, quote_errors, quote_times
 
 TRANSCRIPT = {"turns": [
     {"start_s": 2.0, "end_s": 5.0, "text": "Okay, first unplug the drill."},
@@ -63,8 +63,18 @@ def errors(quote, start=5.0, end=12.0):
 assert "not in turns" in errors(q("tighten the chuck firmly with the key", [1], 6.0, 9.5))[0]
 assert "not consecutive" in errors(q("pull the old bit out", [0, 2], 2.0, 12.0))[0]
 assert "not consecutive" in errors(q("pull the old bit out", [3], 12.0, 14.0))[0]
-assert "bounds of turns" in errors(q("pull the old bit out", [2], 9.0, 12.0))[0]
+assert "where its words are" in errors(q("pull the old bit out", [2], 9.0, 12.0))[0]
 assert "outside the clip" in errors(q("first unplug the drill", [0], 2.0, 5.0), start=10.0, end=14.0)[0]
+
+# A quote's times are where its words are in a long turn (no word times: the turn's time spread by length).
+LONG = {"turns": [{"start_s": 0.0, "end_s": 20.0,
+                   "text": "Lift the car first. <|speaker_A|> Then open the hood and take the oil cap off."}]}
+sim, a, b = quote_times("open the hood and take the oil cap off", LONG["turns"])
+assert sim == 1.0 and 7.0 < a < 8.0 and b == 20.0, (sim, a, b)  # 24 of 63 characters in
+inside = Guide.model_validate(guide([step(1, 8.5, 19.0, quote=q("open the hood and take the oil cap off", [0], a, b))]))
+assert quote_errors(inside, LONG) == [], quote_errors(inside, LONG)  # the turn starts 7.5 s before the clip
+early = Guide.model_validate(guide([step(1, 8.5, 19.0, quote=q("Lift the car first", [0], *quote_times("Lift the car first", LONG["turns"])[1:]))]))
+assert "outside the clip" in quote_errors(early, LONG)[0]
 assert "no readable transcript_id" in quote_errors(good)[0]
 
 print("ok")

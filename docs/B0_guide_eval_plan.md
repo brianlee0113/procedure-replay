@@ -78,7 +78,10 @@ Rules:
 - `quote` is null or words that appear verbatim in the transcript turns `turn_ids`: consecutive turns,
   **numbered from 0** by their position in `turns` of the transcript file. The prompt shows each turn
   with that number (`#4 [00:12–00:15] …`), so the model can cite it. Muse Voice Transcribe gives no word
-  timestamps, so `start_s`/`end_s` are the bounds of those turns.
+  timestamps, so `start_s`/`end_s` are where the quoted words are estimated to be: each turn's time spread
+  over its words by length (`guides.quote_times`; 10/30). Turns run ~17 s and clips ~10 s, so the turn
+  bounds dropped 63 of 170 quotes that were said inside the clip. Guides built before 10/30 carry the turn
+  bounds, which the check still accepts.
 - `inputs_provided` records what was **given** to the model; it does not claim the model used it. Use
   is measured by the ablation in 4.4.
 - `category` comes from a fixed taxonomy (section 4.3).
@@ -333,8 +336,8 @@ says so next to the judged metrics.
 ### 4.4 Narration use (narrated videos only)
 
 - **Quote fidelity:** every non-null `quote` appears in its `turn_ids` (normalized edit similarity ≥ 0.9
-  against a span of those turns) and those turns lie **inside** the step's clip (± 1 s), so the words
-  the app shows are heard in the clip it loops. Target 100% — the app shows it as the instructor's
+  against a span of those turns) and the quoted words' estimated times lie **inside** the step's clip
+  (± 1 s), so the words the app shows are heard in the clip it loops. Target 100% — the app shows it as the instructor's
   words, so a fabricated quote is a hard failure.
 - **Quote rate:** share of steps with a non-null quote, reported next to fidelity (all-null quotes
   would pass fidelity trivially).

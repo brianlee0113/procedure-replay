@@ -169,19 +169,44 @@ def normalize(text: str) -> str:
     return " ".join(re.sub(r"[^a-z0-9' ]+", " ", text.lower()).split())
 
 
-def quote_similarity(quote: str, said: str) -> float:
-    """Best match of the quote against any word span of what was said (1.0 = verbatim after normalizing)."""
-    q, words = normalize(quote), normalize(said).split()
+def best_span(quote: str, words: list[str]) -> tuple[float, int, int]:
+    """(similarity, first, end) of the span words[first:end] that best matches the quote (1.0 = verbatim after
+    normalizing); `words` are normalized."""
+    q = normalize(quote)
     n = len(q.split())
     if not n or not words:
-        return 0.0
-    spans = (" ".join(words[i:i + k]) for k in range(max(1, n - 2), n + 3) for i in range(len(words) - k + 1))
-    return max((SequenceMatcher(None, q, span).ratio() for span in spans), default=0.0)
+        return 0.0, 0, 0
+    spans = ((i, i + k) for k in range(max(1, n - 2), n + 3) for i in range(len(words) - k + 1))
+    return max(((SequenceMatcher(None, q, " ".join(words[a:b])).ratio(), a, b) for a, b in spans), default=(0.0, 0, 0))
+
+
+def quote_similarity(quote: str, said: str) -> float:
+    """Best match of the quote against any word span of what was said (1.0 = verbatim after normalizing)."""
+    return best_span(quote, normalize(said).split())[0]
+
+
+def quote_times(quote: str, turns: list[dict]) -> tuple[float, float, float]:
+    """(similarity, start_s, end_s) of the quote inside consecutive turns. The transcriber gives no word times,
+    so each turn's time is spread over its words by length; a turn runs ~17 s, a step's clip ~10 s."""
+    words, times = [], []
+    for t in turns:
+        ws = normalize(spoken(t["text"])).split()
+        total, pos = sum(len(w) + 1 for w in ws) or 1, 0
+        for w in ws:
+            start = t["start_s"] + (t["end_s"] - t["start_s"]) * pos / total
+            pos += len(w) + 1
+            words.append(w)
+            times.append((start, t["start_s"] + (t["end_s"] - t["start_s"]) * pos / total))
+    sim, a, b = best_span(quote, words)
+    if b <= a:
+        return sim, turns[0]["start_s"], turns[-1]["end_s"]
+    return sim, round(times[a][0], 2), round(times[b - 1][1], 2)
 
 
 def quote_errors(guide: Guide, transcript: dict | None = None) -> list[str]:
     """Quote checks that need the transcript (§2, §4.4): turns exist and are consecutive, the words are in
-    them, their times match, and they lie inside the step's clip (± CLIP_PAD_S). [] when every quote passes."""
+    them, the quote's times are where its words are (quote_times), and those lie inside the step's clip
+    (± CLIP_PAD_S). [] when every quote passes."""
     quoted = [s for s in guide.steps if s.quote]
     if not quoted:
         return []
@@ -198,12 +223,14 @@ def quote_errors(guide: Guide, transcript: dict | None = None) -> list[str]:
             errors.append(f"{where}: turn_ids {ids} are not consecutive turns of {len(turns)}")
             continue
         said = turns[ids[0]:ids[-1] + 1]
-        if (sim := quote_similarity(q.text, " ".join(spoken(t["text"]) for t in said))) < QUOTE_MIN_SIMILARITY:
+        sim, start, end = quote_times(q.text, said)
+        if sim < QUOTE_MIN_SIMILARITY:
             errors.append(f"{where}: quote not in turns {ids} (similarity {sim:.2f})")
-        if abs(q.start_s - said[0]["start_s"]) > EPS or abs(q.end_s - said[-1]["end_s"]) > EPS:
-            errors.append(f"{where}: quote times are not the bounds of turns {ids}")
+        bounds = (said[0]["start_s"], said[-1]["end_s"])  # guides built before quote_times (10/30) used these
+        if not any(abs(q.start_s - a) <= EPS and abs(q.end_s - b) <= EPS for a, b in ((start, end), bounds)):
+            errors.append(f"{where}: quote times are not where its words are in turns {ids}")
         if q.start_s < s.clip.start_s - CLIP_PAD_S or q.end_s > s.clip.end_s + CLIP_PAD_S:
-            errors.append(f"{where}: quoted turns fall outside the clip")
+            errors.append(f"{where}: quoted words fall outside the clip")
     return errors
 
 

@@ -586,17 +586,27 @@ def feed(category: guides.Category | None = None, user: str = USER) -> list[dict
 def library(user: str = USER) -> dict:
     progress = read_json(PROGRESS, {}).get(user, {})
     reactions = read_json(REACTIONS, {})
-    out = {"continue": [], "saved": [], "mine": []}
+    all_progress = read_json(PROGRESS, {})
+    out = {"continue": [], "saved": [], "liked": [], "mine": []}
+    learners: set[str] = set()
+    likes = 0
     for gid in guides.all_ids():
         guide, meta = guides.load(gid)
         if meta.visibility == "draft" and meta.author != user:
             continue
         c = card(guide, meta, user)
+        r = reactions.get(gid, {})
         if meta.author == user:
             out["mine"].append(c)
-        if user in reactions.get(gid, {}).get("saves", []):
+            # Learners: anyone else who has opened a step of one of your guides.
+            learners |= {u for u, seen in all_progress.items() if u != user and gid in seen}
+            likes += len(r.get("likes", []))
+        if user in r.get("saves", []):
             out["saved"].append(c)
+        if user in r.get("likes", []):
+            out["liked"].append(c)
         if gid in progress and progress[gid] < len(guide.steps):
             step = guide.steps[progress[gid] - 1]
             out["continue"].append({**c, "step": progress[gid], "next_step_title": step.title})
+    out["profile"] = {"guides": sum(c["visibility"] != "draft" for c in out["mine"]), "learners": len(learners), "likes": likes}
     return out

@@ -270,7 +270,16 @@ struct GuideCard: Decodable, Identifiable, Hashable {
 struct Library: Decodable {
   let `continue`: [GuideCard]
   let saved: [GuideCard]
+  let liked: [GuideCard]
   let mine: [GuideCard]
+  let profile: Profile
+
+  /// Your guides that aren't drafts, everyone else who opened one of them, and the likes they got.
+  struct Profile: Decodable {
+    let guides: Int
+    let learners: Int
+    let likes: Int
+  }
 }
 
 struct PublishRequest: Encodable {

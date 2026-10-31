@@ -80,7 +80,10 @@ api.put(f"/guides/{gid}/progress", json={"step": 3}, headers=MIN)
 lib = api.get("/library", headers=MIN).json()
 assert [x["guide_id"] for x in lib["saved"]] == [gid] and lib["mine"] == []
 assert lib["continue"][0]["step"] == 3 and lib["continue"][0]["next_step_title"] == "Insert the new drill bit"
-assert [x["guide_id"] for x in api.get("/library", headers=LUIS).json()["mine"]] == [gid]
+assert [x["guide_id"] for x in lib["liked"]] == [gid]
+lib = api.get("/library", headers=LUIS).json()
+assert [x["guide_id"] for x in lib["mine"]] == [gid]
+assert lib["profile"] == {"guides": 1, "learners": 1, "likes": 1}  # min liked it and opened step 3
 assert api.delete(f"/guides/{gid}/like", headers=MIN).json()["likes"] == 0
 
 # Clip and covers come from the source footage.

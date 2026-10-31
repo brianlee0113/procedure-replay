@@ -45,6 +45,7 @@ struct RootView: View {
     }
     .task {
       let args = ProcessInfo.processInfo.arguments
+      if args.contains("--tab=library") { tab = .library }
       // `--open-guide=<id>` opens a guide as a trainee; `--autorun-a4` also plays step 3 and advances.
       if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
         let autoplay = args.contains("--autorun-a4") ? 3 : args.contains("--autorun-lens") ? 1 : nil

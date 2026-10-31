@@ -1,4 +1,4 @@
-// Library: pick up where you stopped, guides you saved, and guides you recorded (with who can see them).
+// Library: your profile, the guide you were following, then one grid at a time: My guides, Saved or Liked.
 
 import SwiftUI
 
@@ -10,11 +10,16 @@ struct LibraryView: View {
   @State private var library: Library?
   @State private var error: String?
   @State private var opened: OpenedGuide?
+  @State private var tab: Shelf = .mine
+
+  enum Shelf: String, CaseIterable {
+    case mine = "My guides", saved = "Saved", liked = "Liked"
+  }
 
   var body: some View {
     NavigationStack {
       ScrollView {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 16) {
           Text("Library").font(.largeTitle.bold()).foregroundStyle(Color.ink)
           if let error {
             StateMessage(symbol: "wifi.exclamationmark", title: "Can't reach the Mac server", message: error,
@@ -23,30 +28,21 @@ struct LibraryView: View {
             ProgressView().frame(maxWidth: .infinity).padding(.top, 60)
           }
           if let library {
-            ForEach(library.continue) { card in
-              ContinueCard(card: card) { opened = OpenedGuide(card: card, step: card.step) }
-            }
-            section("Saved", count: library.saved.count)
-            if library.saved.isEmpty {
-              Text("Tap the bookmark on a guide in the Feed to keep it here.").font(.callout).foregroundStyle(Color.inkSecondary)
-            } else {
-              LazyVGrid(columns: [GridItem(.flexible(), spacing: 16), GridItem(.flexible(), spacing: 16)],
-                        alignment: .leading, spacing: 18) {
-                ForEach(library.saved) { card in
-                  Button { opened = OpenedGuide(card: card, step: nil) } label: { GuideTile(card: card) }
-                    .buttonStyle(.plain)
+            ProfileHeader(name: AppSettings.creatorName, profile: library.profile)
+            // One card tall however many guides are under way; swipe sideways for the others.
+            ScrollView(.horizontal) {
+              LazyHStack(spacing: 10) {
+                ForEach(library.continue) { card in
+                  ContinueCard(card: card) { withoutAnimation { opened = OpenedGuide(card: card, step: card.step) } }
+                    .containerRelativeFrame(.horizontal)
                 }
               }
+              .scrollTargetLayout()
             }
-            section("My guides", count: library.mine.count, note: "Recorded on your glasses")
-            if library.mine.isEmpty {
-              Text("Guides you record appear here.").font(.callout).foregroundStyle(Color.inkSecondary)
-            }
-            ForEach(library.mine) { card in
-              Button {
-                if card.visibility == "draft" { openDraft(card.guideId) } else { opened = OpenedGuide(card: card, step: nil) }
-              } label: { MineRow(card: card) }.buttonStyle(.plain)
-            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollIndicators(.hidden)
+            tabs(library)
+            grid(cards(library), empty: emptyMessage)
           }
         }
         .padding(.horizontal, 16)
@@ -64,13 +60,67 @@ struct LibraryView: View {
     }
   }
 
-  private func section(_ title: String, count: Int, note: String? = nil) -> some View {
-    HStack(alignment: .firstTextBaseline) {
-      Text("\(title) · \(count)").font(.headline).foregroundStyle(Color.ink)
-      Spacer()
-      if let note { Text(note).font(.caption).foregroundStyle(Color.inkSecondary) }
+  private func cards(_ library: Library) -> [GuideCard] {
+    switch tab {
+    case .mine: library.mine
+    case .saved: library.saved
+    case .liked: library.liked
     }
-    .padding(.top, 8)
+  }
+
+  private var emptyMessage: String {
+    switch tab {
+    case .mine: "Guides you record appear here."
+    case .saved: "Tap the bookmark on a guide to keep it here."
+    case .liked: "Guides you like appear here."
+    }
+  }
+
+  private func tabs(_ library: Library) -> some View {
+    HStack(spacing: 0) {
+      ForEach(Shelf.allCases, id: \.self) { shelf in
+        let on = shelf == tab
+        Button { tab = shelf } label: {
+          VStack(spacing: 8) {
+            Text("\(shelf.rawValue) \(count(shelf, library))")
+              .font(.subheadline.weight(on ? .semibold : .medium))
+              .foregroundStyle(on ? Color.ink : Color.inkSecondary)
+            Rectangle().fill(on ? Color.ink : Color.track).frame(height: on ? 2 : 1)
+          }
+          .frame(maxWidth: .infinity)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+      }
+    }
+    .padding(.top, 4)
+  }
+
+  private func count(_ shelf: Shelf, _ library: Library) -> Int {
+    switch shelf {
+    case .mine: library.mine.count
+    case .saved: library.saved.count
+    case .liked: library.liked.count
+    }
+  }
+
+  @ViewBuilder
+  private func grid(_ cards: [GuideCard], empty: String) -> some View {
+    if cards.isEmpty {
+      Text(empty).font(.callout).foregroundStyle(Color.inkSecondary).padding(.top, 8)
+    } else {
+      LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+        ForEach(cards) { card in
+          Button {
+            if card.visibility == "draft" { openDraft(card.guideId) } else { withoutAnimation { opened = OpenedGuide(card: card, step: nil) } }
+          } label: {
+            CoverTile(card: card, showsStatus: tab == .mine)
+          }
+          .buttonStyle(.plain)
+        }
+      }
+    }
   }
 
   private func load() async {
@@ -117,55 +167,75 @@ struct ContinueCard: View {
   }
 }
 
-struct GuideTile: View {
-  let card: GuideCard
+/// Your name and what your guides have reached, as on a profile.
+struct ProfileHeader: View {
+  let name: String
+  let profile: Library.Profile
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Color.track
-        .aspectRatio(0.86, contentMode: .fit)
-        .overlay {
-          AsyncImage(url: API.url(card.coverUrl)) { $0.resizable().scaledToFill() } placeholder: { Color.track }
+    HStack(spacing: 14) {
+      Text(name.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined().uppercased())
+        .font(.title3.weight(.semibold)).foregroundStyle(.white)
+        .frame(width: 64, height: 64)
+        .background(Color.ai, in: .circle)
+      VStack(alignment: .leading, spacing: 6) {
+        Text(name).font(.headline).foregroundStyle(Color.ink)
+        HStack(spacing: 18) {
+          stat(profile.guides, "guides")
+          stat(profile.learners, "learners")
+          stat(profile.likes, "likes")
         }
-        .overlay(alignment: .topLeading) {
-          Text("\(card.steps) steps".uppercased()).font(.eyebrow).foregroundStyle(.white)
-            .padding(.horizontal, 10).padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
-            .environment(\.colorScheme, .dark)
-            .padding(10)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 22))
-      Text(card.title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink).lineLimit(2)
-        .multilineTextAlignment(.leading)
-      Text("\(card.authorName) · \(clock(card.durationS))").font(.caption).foregroundStyle(Color.inkSecondary)
+      }
+      Spacer(minLength: 0)
     }
+  }
+
+  private func stat(_ value: Int, _ label: String) -> some View {
+    VStack(alignment: .leading, spacing: 0) {
+      Text("\(value)").font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink).monospacedDigit()
+      Text(label).font(.caption).foregroundStyle(Color.inkSecondary)
+    }
+    .accessibilityElement(children: .combine)
   }
 }
 
-struct MineRow: View {
+/// A cover in the Library grid. Your own guides carry who can see them: Draft, Private, or the likes on a public one.
+struct CoverTile: View {
   let card: GuideCard
-
-  private var status: String {
-    switch card.visibility {
-    case "public": return "Public · \(card.likes) likes · \(card.saves) saves"
-    case "private": return "Private · only people with the link"
-    default: return "Draft · not published"
-    }
-  }
+  let showsStatus: Bool
 
   var body: some View {
-    HStack(spacing: 12) {
-      AsyncImage(url: API.url(card.coverUrl)) { $0.resizable().scaledToFill() } placeholder: { Color.track }
-        .frame(width: 76, height: 64).clipShape(RoundedRectangle(cornerRadius: 14))
-      VStack(alignment: .leading, spacing: 3) {
-        Eyebrow(text: status, color: card.visibility == "draft" ? Color.inkSecondary : Color.ai)
-        Text(card.title).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink).lineLimit(2)
-        Text("\(card.steps) steps · \(clock(card.durationS))").font(.caption).foregroundStyle(Color.inkSecondary)
+    Color.track
+      .aspectRatio(115.0 / 150.0, contentMode: .fit)
+      .overlay {
+        AsyncImage(url: API.url(card.coverUrl)) { $0.resizable().scaledToFill() } placeholder: { Color.track }
       }
-      Spacer(minLength: 0)
-      Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Color.inkSecondary)
+      .overlay {
+        LinearGradient(stops: [.init(color: .clear, location: 0.45), .init(color: .black.opacity(0.7), location: 1)],
+                       startPoint: .top, endPoint: .bottom)
+      }
+      .overlay(alignment: .bottomLeading) {
+        Text(card.title).font(.caption.weight(.semibold)).foregroundStyle(.white).lineLimit(3)
+          .multilineTextAlignment(.leading).padding(8)
+      }
+      .overlay(alignment: .topLeading) {
+        if showsStatus, let badge {
+          Text(badge.text).font(.caption2.weight(.semibold)).foregroundStyle(Color.ink)
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(badge.color, in: RoundedRectangle(cornerRadius: 8))
+            .padding(8)
+        }
+      }
+      .clipShape(RoundedRectangle(cornerRadius: 14))
+      .accessibilityElement(children: .combine)
+  }
+
+  private var badge: (text: String, color: Color)? {
+    switch card.visibility {
+    case "draft": ("Draft", Color(red: 1, green: 0.8, blue: 0.2))
+    case "private": ("Private", .white)
+    case "public": card.likes > 0 ? ("♥ \(card.likes)", .white) : nil
+    default: nil
     }
-    .padding(10)
-    .background(Color.panel, in: RoundedRectangle(cornerRadius: 20))
   }
 }

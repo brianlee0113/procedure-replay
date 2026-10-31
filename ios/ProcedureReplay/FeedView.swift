@@ -50,7 +50,7 @@ struct FeedView: View {
                          actionTitle: "Record a guide", action: startRecording)
           }
           ForEach($cards) { $card in
-            FeedCard(card: $card) { opened = card }
+            FeedCard(card: $card) { withoutAnimation { opened = card } }
           }
         }
         .padding(.horizontal, 16)

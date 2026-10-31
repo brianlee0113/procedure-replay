@@ -97,44 +97,99 @@ struct Banner: View {
   }
 }
 
-/// Swipe right from the left edge to go back, as on a pushed iPhone screen. Guides and the step player open as
-/// full-screen covers (so the tab bar doesn't float over them), which have no system back swipe. Apply it to the
-/// cover's root: the cover turns clear so the screen it slides off reveals the one behind.
+/// Guides and the step player open as full-screen covers (so the tab bar doesn't float over them), but move like a
+/// pushed iPhone screen: they slide in from the right, and go back to the right, by a swipe from the left edge or by
+/// their own back button (`slideBack`). Apply it to the cover's root, and present the cover with `withoutAnimation`
+/// so the cover's own slide-up doesn't run too. The cover turns clear so the screen behind shows while it slides.
 struct EdgeSwipeBack: ViewModifier {
   @Environment(\.dismiss) private var dismiss
-  @State private var offset: CGFloat = 0
+  @State private var shown = false
+  /// True once the slide-in has finished, until the slide-out starts. An edge swipe only starts while settled: a
+  /// finger grabbing the screen mid-slide would yank it from wherever the slide had got to.
+  @State private var settled = false
+  @State private var closing = false
+  @State private var drag: CGFloat = 0
   @State private var width: CGFloat = 400
+  /// Set on a drag's first change: nil = not decided yet, else the x translation at which an edge swipe started
+  /// (the screen follows the finger from there, so it doesn't jump by the recognition distance), or -1 when the
+  /// drag isn't an edge swipe (didn't start at the edge, or went more up/down than sideways).
+  @State private var swipeStart: CGFloat?
+  /// True while any drag is under way; it resets on its own when the system cancels the drag, which skips `onEnded`.
+  @GestureState private var dragging = false
 
   private let edge: CGFloat = 30
 
   func body(content: Content) -> some View {
+    let shown = shown, drag = drag
+    let swiping = (swipeStart ?? -1) >= 0
     content
-      .offset(x: offset)
-      .shadow(color: .black.opacity(offset > 0 ? 0.25 : 0), radius: 16)
+      .environment(\.slideBack, close)
+      // While the screen follows the finger, a scroll view inside must not also scroll up and down.
+      .scrollDisabled(swiping)
+      .visualEffect { effect, proxy in effect.offset(x: shown ? drag : proxy.size.width) }
+      .shadow(color: .black.opacity(shown && drag == 0 ? 0 : 0.25), radius: 16)
       .simultaneousGesture(
         DragGesture(minimumDistance: 10, coordinateSpace: .global)
+          .updating($dragging) { _, state, _ in state = true }
           .onChanged { v in
-            guard v.startLocation.x < edge else { return }
-            offset = max(0, v.translation.width)
+            if swipeStart == nil {
+              let sideways = abs(v.translation.width) > abs(v.translation.height)
+              swipeStart = settled && v.startLocation.x < edge && sideways && v.translation.width > 0 ? v.translation.width : -1
+            }
+            guard let start = swipeStart, start >= 0 else { return }
+            self.drag = max(0, v.translation.width - start)
           }
           .onEnded { v in
-            guard v.startLocation.x < edge else { return }
-            if v.translation.width > width * 0.35 || v.predictedEndTranslation.width > width * 0.6 {
-              withAnimation(.easeOut(duration: 0.2)) { offset = width } completion: {
-                var t = Transaction()
-                t.disablesAnimations = true  // already off screen; skip the cover's slide-down
-                withTransaction(t) { dismiss() }
-              }
+            defer { swipeStart = nil }
+            guard let start = swipeStart, start >= 0 else { return }
+            let moved = v.translation.width - start
+            if moved > width * 0.35 || v.predictedEndTranslation.width - start > width * 0.6 {
+              close()
             } else {
-              withAnimation(.spring(duration: 0.25)) { offset = 0 }
+              withAnimation(.spring(duration: 0.25)) { self.drag = 0 }
             }
           }
       )
+      // A cancelled drag (another gesture took the touch, an alert, the app went to the background) never reaches
+      // `onEnded`: put the screen back instead of leaving it half off, to jump the next time it's touched.
+      .onChange(of: dragging) { _, now in
+        guard !now, swipeStart != nil else { return }
+        swipeStart = nil
+        if shown, self.drag != 0 { withAnimation(.spring(duration: 0.25)) { self.drag = 0 } }
+      }
       .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
       .presentationBackground(.clear)
+      .onAppear {
+        guard !shown else { return }  // onAppear runs again when a cover on top of this one closes
+        withAnimation(.easeOut(duration: 0.3)) { self.shown = true } completion: { if !closing { settled = true } }
+      }
+  }
+
+  private func close() {
+    guard !closing else { return }  // a second tap on Back mid-slide would dismiss twice
+    closing = true
+    settled = false
+    withAnimation(.easeOut(duration: 0.25)) {
+      shown = false
+      drag = 0
+    } completion: {
+      withoutAnimation { dismiss() }  // already off screen; skip the cover's slide-down
+    }
   }
 }
 
 extension View {
   func edgeSwipeBack() -> some View { modifier(EdgeSwipeBack()) }
+}
+
+extension EnvironmentValues {
+  /// Back for a screen under `edgeSwipeBack()`: slides it out to the right, then dismisses it. Nil elsewhere.
+  @Entry var slideBack: (() -> Void)?
+}
+
+/// Presents or dismisses a full-screen cover without its slide-up/down, for covers that slide sideways themselves.
+func withoutAnimation(_ body: () -> Void) {
+  var t = Transaction()
+  t.disablesAnimations = true
+  withTransaction(t, body)
 }

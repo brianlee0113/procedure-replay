@@ -8,6 +8,7 @@ struct StepPlayerView: View {
   @State private var player = LoopingPlayer()
   @State private var lensMode = LensMode()
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.slideBack) private var slideBack
 
   private let autorun: Bool
   private let autorunLens: Bool
@@ -164,8 +165,12 @@ struct StepPlayerView: View {
     if !isFirst { index -= 1 }
   }
 
+  private func close() {
+    if let slideBack { slideBack() } else { dismiss() }
+  }
+
   private func next() {
-    if isLast { dismiss() } else { index += 1 }
+    if isLast { close() } else { index += 1 }
   }
 
   private var progress: some View {
@@ -180,7 +185,7 @@ struct StepPlayerView: View {
 
   private var topControls: some View {
     HStack {
-      Button { dismiss() } label: {
+      Button { close() } label: {
         Image(systemName: "xmark").font(.system(size: 16, weight: .semibold)).frame(width: 40, height: 40)
       }
       .glassEffect(.regular.interactive(), in: .circle)

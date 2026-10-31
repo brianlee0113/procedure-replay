@@ -13,7 +13,11 @@ final class GuideModel {
 
   func load() async {
     do {
-      response = try await API.guide(guideId)
+      let fresh = try await API.guide(guideId)
+      guard let shown = response else { response = fresh; return }
+      // A reload (after the step player closes) only brings back where the trainee stopped. Swapping the whole
+      // response would rebuild the page under them a beat after it slid back in; change just that, and ease it.
+      if fresh.progress != shown.progress { withAnimation(.snappy) { response?.progress = fresh.progress } }
     } catch {
       self.error = "Couldn't open this guide: \(error.localizedDescription)"
     }
@@ -32,6 +36,7 @@ struct GuideView: View {
   @State var model: GuideModel
   @State var playing: Int?
   @Environment(\.dismiss) private var dismiss
+  @Environment(\.slideBack) private var slideBack
 
   var body: some View {
     Group {
@@ -46,7 +51,9 @@ struct GuideView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(Color.canvas)
     .task { if model.response == nil { await model.load() } }
-    .fullScreenCover(item: Binding(get: { playing.map(StartStep.init) }, set: { playing = $0?.index })) { start in
+    // Reload on close so "Continue step n" follows where the trainee stopped.
+    .fullScreenCover(item: Binding(get: { playing.map(StartStep.init) }, set: { playing = $0?.index }),
+                     onDismiss: { Task { await model.load() } }) { start in
       if let response = model.response {
         StepPlayerView(guide: response.guide, startIndex: start.index).edgeSwipeBack()
       }
@@ -85,11 +92,19 @@ struct GuideView: View {
           HStack {
             Text("Steps").font(.headline)
             Spacer()
-            Text("Each step has its own clip").font(.caption).foregroundStyle(Color.inkSecondary)
+            // Partway through, the other way in is starting over; it sits here, quietly, above step 1.
+            if (response.progress ?? 1) > 1 {
+              Button { withoutAnimation { playing = 1 } } label: {
+                Label("Start over", systemImage: "arrow.counterclockwise").font(.subheadline.weight(.medium))
+              }
+              .foregroundStyle(Color.ai)
+            } else {
+              Text("Each step has its own clip").font(.caption).foregroundStyle(Color.inkSecondary)
+            }
           }
           .padding(.top, 8)
           ForEach(guide.steps) { step in
-            Button { playing = step.index } label: {
+            Button { withoutAnimation { playing = step.index } } label: {
               StepRow(step: step, eyebrow: "Step \(step.index) · \(clock(step.clip.endS - step.clip.startS)) clip",
                       trailing: "play.fill")
             }
@@ -125,7 +140,7 @@ struct GuideView: View {
                        startPoint: .top, endPoint: .bottom)
       }
       HStack {
-        Button { dismiss() } label: {
+        Button { if let slideBack { slideBack() } else { dismiss() } } label: {
           Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
         }
         .glassEffect(.regular.interactive(), in: .circle)
@@ -160,22 +175,27 @@ struct GuideView: View {
     let r = response.reactions
     let start = response.progress ?? 1
     return HStack(spacing: 8) {
-      Button { playing = start } label: {
+      Button { withoutAnimation { playing = start } } label: {
         Text(start > 1 ? "Continue step \(start)" : "Start step 1")
           .font(.headline).frame(maxWidth: .infinity).padding(.vertical, 6)
       }
       .buttonStyle(.glassProminent)
       .tint(Color.ink)
-      reaction(r.liked ? "heart.fill" : "heart", "\(r.likes)", r.liked ? Color.live : Color.ink) {
-        Task { await model.toggle(.like) }
-      }
-      .accessibilityLabel(r.liked ? "Unlike" : "Like")
-      reaction(r.saved ? "bookmark.fill" : "bookmark", "\(r.saves)", Color.ink) {
-        Task { await model.toggle(.save) }
-      }
-      .accessibilityLabel(r.saved ? "Remove from saved" : "Save")
+      reactions(r)
     }
     .padding(.top, 4)
+  }
+
+  @ViewBuilder
+  private func reactions(_ r: Reactions) -> some View {
+    reaction(r.liked ? "heart.fill" : "heart", "\(r.likes)", r.liked ? Color.live : Color.ink) {
+      Task { await model.toggle(.like) }
+    }
+    .accessibilityLabel(r.liked ? "Unlike" : "Like")
+    reaction(r.saved ? "bookmark.fill" : "bookmark", "\(r.saves)", Color.ink) {
+      Task { await model.toggle(.save) }
+    }
+    .accessibilityLabel(r.saved ? "Remove from saved" : "Save")
   }
 
   private func reaction(_ symbol: String, _ count: String, _ tint: Color, action: @escaping () -> Void) -> some View {

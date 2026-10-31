@@ -223,7 +223,7 @@ struct GuideResponse: Decodable {
   let meta: GuideMeta
   let categoryLabel: String
   var reactions: Reactions
-  let progress: Int?
+  var progress: Int?
 }
 
 /// Draft edit: any subset of the step's text, or new bounds (a re-cut).

@@ -56,7 +56,7 @@ struct DraftView: View {
         }
         ToolbarItem(placement: .principal) { Text("Draft").font(.headline) }
         ToolbarItem(placement: .topBarTrailing) {
-          Button("Preview") { previewing = true }.accessibilityHint("See the guide as a trainee will")
+          Button("Preview") { withoutAnimation { previewing = true } }.accessibilityHint("See the guide as a trainee will")
         }
       }
       .navigationBarTitleDisplayMode(.inline)

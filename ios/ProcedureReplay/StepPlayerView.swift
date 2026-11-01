@@ -35,7 +35,8 @@ struct StepPlayerView: View {
     .background(Color.white)
     .ignoresSafeArea(edges: .top)
     .onAppear {
-      player.player.isMuted = !guide.hasNarration
+      player.activateAudio()
+      player.isMuted = !guide.hasNarration
       show(step)
       UIApplication.shared.isIdleTimerDisabled = true  // the trainee's hands are on the job, not the screen
     }
@@ -158,6 +159,10 @@ struct StepPlayerView: View {
         if lensMode.isOn || lensMode.connecting || lensMode.error != nil { lensStatus }
         Spacer()
         seekBar.padding(.horizontal, -16)  // edge to edge, outside the controls' side margins
+          // In the corner above the bar, like Instagram. Drawn over the scrub strip, so a tap on it never seeks or pauses.
+          .overlay(alignment: .bottomTrailing) {
+            if !scrubbing { soundButton.padding(.trailing, -6).padding(.bottom, 6) }
+          }
       }
       .padding(.horizontal, 16)
       .padding(.top, 58)
@@ -253,6 +258,22 @@ struct StepPlayerView: View {
       .accessibilityValue(player.loops ? "On" : "Off")
     }
     .foregroundStyle(.white)
+  }
+
+  /// Like Instagram: a small speaker in the bottom-right corner turns the clip's sound on or off.
+  private var soundButton: some View {
+    Button { player.isMuted.toggle() } label: {
+      Image(systemName: player.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+        .font(.system(size: 13, weight: .semibold))
+        .contentTransition(.symbolEffect(.replace))
+        .frame(width: 34, height: 34)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .padding(5)  // 44 pt to tap
+        .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .foregroundStyle(.white)
+    .accessibilityLabel(player.isMuted ? "Sound on" : "Sound off")
   }
 
   /// "On your glasses" and, with simulated glasses, the lens itself in the corner.

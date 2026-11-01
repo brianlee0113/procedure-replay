@@ -12,6 +12,11 @@ final class LoopingPlayer {
   var elapsed = 0.0
   var duration = 0.0
   var isPaused = false
+  /// Only mutes the player. The audio session is set once (`activateAudio`): changing it on every toggle
+  /// made iOS stop the clip for a moment, so the sound button seemed to pause the video too.
+  var isMuted = true {
+    didSet { player.isMuted = isMuted }
+  }
   var loops = true {
     didSet { if !loops { looper?.disableLooping() } else if oldValue == false { restart() } }
   }
@@ -24,7 +29,7 @@ final class LoopingPlayer {
   @ObservationIgnored private var playAfterScrub = false
 
   init() {
-    player.isMuted = true  // StepPlayerView turns sound on for guides built with a transcript
+    player.isMuted = true  // StepPlayerView turns sound on for guides built with a transcript; the trainee can toggle it
     // 30 Hz so the story bar at the top fills smoothly.
     timeObserver = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 30), queue: .main) {
       [weak self] t in
@@ -87,6 +92,13 @@ final class LoopingPlayer {
     player.play()
   }
 
+  /// Sound plays even with the ring switch on silent, like a video app, and mixes with music the trainee has on.
+  func activateAudio() {
+    let session = AVAudioSession.sharedInstance()
+    try? session.setCategory(.playback, mode: .moviePlayback, options: [.mixWithOthers])
+    try? session.setActive(true)
+  }
+
   /// A tap on the middle of the video. A clip that played to its end (Loop off) starts over.
   func togglePause() {
     if isPaused {
@@ -118,6 +130,7 @@ final class LoopingPlayer {
   func stop() {
     player.pause()
     statusTask?.cancel()
+    try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
   }
 }
 

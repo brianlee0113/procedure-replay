@@ -631,3 +631,291 @@ on the watch page, checked on 2026-10-27.
 - Camera: first person (hands doing the task); English narration. 12:20. Feed sample (Crafts)
 - Role: reference
 - Edits:
+
+### yt_AfJW7RkPawA
+- Title: Can I Assemble My Own Electric Bike
+- Creator: Youbadass2, https://www.youtube.com/channel/UCFp0VW1VuXl8Vy_kimuo22g
+- Source: https://www.youtube.com/watch?v=AfJW7RkPawA
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 4:45. Feed sample (Assembly)
+- Role: reference
+- Edits:
+
+### yt_Vtc5ui7SGl8
+- Title: Easily Build a Birdhouse
+- Creator: Birds Walking Down, https://www.youtube.com/channel/UCM1MRkNtqulXq0NlVo2FpUQ
+- Source: https://www.youtube.com/watch?v=Vtc5ui7SGl8
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 8:06. Feed sample (Assembly)
+- Role: reference
+- Edits:
+
+### yt_QPezClmve4A
+- Title: How to Remove Stubborn Toilet Rings #toiletcleaning #cleaningproducts
+- Creator: Angela Brown Cleaning, https://www.youtube.com/channel/UC8OUzZ0rKHOUZ19em4cEXyQ
+- Source: https://www.youtube.com/watch?v=QPezClmve4A
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 1:49. Feed sample (Cleaning & household)
+- Role: reference
+- Edits:
+
+### yt_iDyNttlwbRs
+- Title: REPOT HOUSE PLANTS HOW TO | HER BEAUTY`S INSIDE OUT
+- Creator: HerBeauty`sInsideOut, https://www.youtube.com/channel/UCwnEAAdtN1QZw4O4fC7dS0w
+- Source: https://www.youtube.com/watch?v=iDyNttlwbRs
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 7:31. Feed sample (Cleaning & household)
+- Role: reference
+- Edits:
+
+### yt_9JO8cuaAwmE
+- Title: Get healthier and more productive tomato plants by pruning like this.
+- Creator: Escaping The Daily Grind, https://www.youtube.com/channel/UC_jnZMxiuhgRJAe2PEjZc-w
+- Source: https://www.youtube.com/watch?v=9JO8cuaAwmE
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 11:27. Feed sample (Cleaning & household)
+- Role: reference
+- Edits:
+
+### yt_khq-w2oZ8RA
+- Title: Repotting a Sad Aloe Plant
+- Creator: Tropical Plant Party, https://www.youtube.com/channel/UC1q227tKh0r4TKjQx8ieNVg
+- Source: https://www.youtube.com/watch?v=khq-w2oZ8RA
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 13:21. Feed sample (Cleaning & household)
+- Role: reference
+- Edits:
+
+### yt_blg-mA-zdyI
+- Title: Tip #9 | How to Chop an Onion
+- Creator: Vegan.com, https://www.youtube.com/channel/UCStdC0glYtZVfaf0A4_DYeA
+- Source: https://www.youtube.com/watch?v=blg-mA-zdyI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:34. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_kyg5J9ciD6c
+- Title: How to Make An Athlete's Omelette!!!
+- Creator: Taylor Sports Performance, https://www.youtube.com/channel/UCooKVnfsowRwI8JFiK9WfKw
+- Source: https://www.youtube.com/watch?v=kyg5J9ciD6c
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:08. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_DMeYqJQx2Zo
+- Title: How To Chop An Onion
+- Creator: Mandi Harris, https://www.youtube.com/channel/UCGKrZDo2uhD9xLHXoxxFDBg
+- Source: https://www.youtube.com/watch?v=DMeYqJQx2Zo
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:49. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_sTUosdKl2lM
+- Title: Classic Swiss Cheese Fondue Recipe - Easy & Creamy Homemade Fondue
+- Creator: Dragoony's bites, https://www.youtube.com/channel/UCuSTM-51eMAH9X6oR6ugd4A
+- Source: https://www.youtube.com/watch?v=sTUosdKl2lM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 4:36. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_U-nqknHm9hY
+- Title: EASY FRIED RICE | POV COOKING
+- Creator: Ghanzi, https://www.youtube.com/channel/UCAureLLC1YFTUrAWo0buJ1A
+- Source: https://www.youtube.com/watch?v=U-nqknHm9hY
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:14. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_nnUCgYNy2cQ
+- Title: Make Kimchi with Seaweed
+- Creator: Savage Craic, https://www.youtube.com/channel/UCLeNHpSMwYSaKSYHHqFsGrQ
+- Source: https://www.youtube.com/watch?v=nnUCgYNy2cQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 9:05. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_KkulM98briI
+- Title: How to Make Artisan Sourdough Bread [Step-by-Step Process]
+- Creator: A Beautiful Plate, https://www.youtube.com/channel/UCEXK2SN_41RYwJ3SOoQOP4A
+- Source: https://www.youtube.com/watch?v=KkulM98briI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 13:49. Feed sample (Cooking)
+- Role: reference
+- Edits:
+
+### yt_I5LDUoMfoDI
+- Title: Crochet Basics: Changing colour (for granny squares)
+- Creator: Nohella-Jayne, https://www.youtube.com/channel/UCNf8yUe5sRd6WsC2BnB9JAw
+- Source: https://www.youtube.com/watch?v=I5LDUoMfoDI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:56. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_0UAnBPl5ajQ
+- Title: Last step of no-glue book binding
+- Creator: theoppositeshore, https://www.youtube.com/channel/UC1G9ngNY1L-X0CP9LeS0B3w
+- Source: https://www.youtube.com/watch?v=0UAnBPl5ajQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:21. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_LlSBeXLegPY
+- Title: How to Knit: Beginning a Row with a Yarn Over
+- Creator: The Yarnist, https://www.youtube.com/channel/UC4P7tVwBNJvcijWA3r6EPGg
+- Source: https://www.youtube.com/watch?v=LlSBeXLegPY
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 3:30. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_Vbblsk18sXw
+- Title: How to embroider dresses tutorial | Hand embroidery for beginners
+- Creator: Tata Sol, https://www.youtube.com/channel/UCvJ7J75ul_LgCScXtKi-Ahw
+- Source: https://www.youtube.com/watch?v=Vbblsk18sXw
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:02. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_mhlH7Ye7e-U
+- Title: How to Mat a Picture - Tutorial by Stu-Art Supplies
+- Creator: Stu-Art Supplies, https://www.youtube.com/channel/UCr-sO2OQ4ta9NEeNQa7nfKQ
+- Source: https://www.youtube.com/watch?v=mhlH7Ye7e-U
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:33. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_cVbbNGXrY8k
+- Title: How to Knit a Simple Baby Hat Using 2 Straight Needles
+- Creator: The Wild Cherry Farm, https://www.youtube.com/channel/UC3XlVsPoYZUQZQZXpXl0Sjg
+- Source: https://www.youtube.com/watch?v=cVbbNGXrY8k
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:53. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_4cv8qbo3jmM
+- Title: Stitched How To - Sew a Button
+- Creator: Stitched Sewing, https://www.youtube.com/channel/UCe-oWD02VUtnys1u1Uw9PcQ
+- Source: https://www.youtube.com/watch?v=4cv8qbo3jmM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 6:44. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_6je7fa_nkJY
+- Title: Easy STILL LIFE watercolor tutorial - painting Light and Shadow
+- Creator: Patrick Visser - Watercolour Workout, https://www.youtube.com/channel/UCDlt8d3WR6-FwEsY5mCtDJg
+- Source: https://www.youtube.com/watch?v=6je7fa_nkJY
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 9:25. Feed sample (Crafts)
+- Role: reference
+- Edits:
+
+### yt_FPYtcuFEgFM
+- Title: DIY Leviton Motion Sensor Light - How to Install - EASY INSTALL - $20
+- Creator: Ultimate Tech Hub, https://www.youtube.com/channel/UChCs6TB5FoGFOYUfhtR0nRA
+- Source: https://www.youtube.com/watch?v=FPYtcuFEgFM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:29. Feed sample (Electronics)
+- Role: reference
+- Edits:
+
+### yt_1zpesmcSYrQ
+- Title: Pov cracked screen protector replacement (samsung galaxy a14)
+- Creator: Goofyskatinglifestyle, https://www.youtube.com/channel/UCPhl-mTbFoSCB5UDn676eUQ
+- Source: https://www.youtube.com/watch?v=1zpesmcSYrQ
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:07. Feed sample (Electronics)
+- Role: reference
+- Edits:
+
+### yt_h370VmjTu6c
+- Title: Canon PowerShot SD3500is Digital Elph Touchscreen LCD replacement fix repair
+- Creator: ArtByStrongWolf, https://www.youtube.com/channel/UCa8Bfg_4CKxNpOvI0-tMmXw
+- Source: https://www.youtube.com/watch?v=h370VmjTu6c
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 12:05. Feed sample (Electronics)
+- Role: reference
+- Edits:
+
+### yt_Coio2s2ME9M
+- Title: How To Change A Baby's Diaper
+- Creator: David Tossell, https://www.youtube.com/channel/UCs6lMs6wbm6QNdaTwWNfX6g
+- Source: https://www.youtube.com/watch?v=Coio2s2ME9M
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:51. Feed sample (Other)
+- Role: reference
+- Edits:
+
+### yt_Vji-iNBP6u0
+- Title: How to Jump Start a Subaru Outback (2015–2019)
+- Creator: Clay Auto, https://www.youtube.com/channel/UCImh8f1EeYh4keD4Ww9Lvuw
+- Source: https://www.youtube.com/watch?v=Vji-iNBP6u0
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 1:32. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_1Uv5kJivAgc
+- Title: How to Jump Start a Ford Fusion (2013–2020)
+- Creator: Clay Auto, https://www.youtube.com/channel/UCImh8f1EeYh4keD4Ww9Lvuw
+- Source: https://www.youtube.com/watch?v=1Uv5kJivAgc
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 2:01. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_DBPed9JZslI
+- Title: DIY How to Change Spare Tire 2017 Volkswagen Tiguan
+- Creator: The Mechanic OC, https://www.youtube.com/channel/UCTu6CwRWjjWWVsBHr0eo6pQ
+- Source: https://www.youtube.com/watch?v=DBPed9JZslI
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 5:16. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_92l40XUfN8w
+- Title: How to Properly Oil Your Fishing Reel (and What NOT to Do)
+- Creator: The Fishing Lab, https://www.youtube.com/channel/UCnD0yIHsc9yF-VJUFmW9FPQ
+- Source: https://www.youtube.com/watch?v=92l40XUfN8w
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 6:17. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_Aik-99Bj--0
+- Title: Change a Guitar's String
+- Creator: kentuckm134, https://www.youtube.com/channel/UCCV7bOigxO5vrgRxvPFwNbw
+- Source: https://www.youtube.com/watch?v=Aik-99Bj--0
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 7:36. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_ZDTBPYUmoh0
+- Title: #Seiko 7C46 & 7C43 divers: How to change the battery
+- Creator: Mizeni – for Seiko collectors, https://www.youtube.com/channel/UCA4u3YgOccZS9Ahq35ycR9w
+- Source: https://www.youtube.com/watch?v=ZDTBPYUmoh0
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 8:22. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:
+
+### yt_qEJmLyFTCbM
+- Title: How To Clean a Honda Style Carburetor (Step-by-Step)
+- Creator: Kirk The Mechanic & How-To Guy, https://www.youtube.com/channel/UCuyNwvpd_TyuAnduPHOd-KA
+- Source: https://www.youtube.com/watch?v=qEJmLyFTCbM
+- License: CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)
+- Camera: first person (hands doing the task); English narration. 12:54. Feed sample (Repair & maintenance)
+- Role: reference
+- Edits:

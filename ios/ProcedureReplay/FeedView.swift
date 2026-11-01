@@ -13,28 +13,18 @@ struct FeedView: View {
   @State private var loaded = false
   @State private var opened: GuideCard?
   @State private var showSettings = false
+  @State private var position = ScrollPosition(edge: .top)
+  @State private var offset: CGFloat = 0
+  @State private var floating = false  // header copy that slides down when you scroll back up
+  @State private var refreshing = false
 
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 14) {
-          HStack {
-            Text("Feed").font(.largeTitle.bold()).foregroundStyle(Color.ink)
-            Spacer()
-            Button { showSettings = true } label: {
-              Image(systemName: "gearshape").font(.system(size: 17, weight: .semibold)).frame(width: 40, height: 40)
-            }
-            .glassEffect(.regular.interactive(), in: .circle)
-            .foregroundStyle(Color.ink)
-            .accessibilityLabel("Settings")
-          }
-          ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-              CategoryChip(label: "All", selected: selected == nil) { selected = nil }
-              ForEach(categories, id: \.id) { c in
-                CategoryChip(label: c.label, selected: selected == c.id) { selected = c.id }
-              }
-            }
+          header
+          if refreshing {
+            ProgressView().frame(maxWidth: .infinity).transition(.opacity)
           }
           if let error {
             StateMessage(symbol: "wifi.exclamationmark", title: "Can't reach the Mac server", message: error,
@@ -57,6 +47,25 @@ struct FeedView: View {
         .padding(.top, 8)
         .padding(.bottom, 100)
       }
+      .scrollPosition($position)
+      .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y + $0.contentInsets.top } action: { old, new in
+        offset = new
+        if new <= 0 {
+          floating = false  // the inline header is back in place; the copy sits exactly on top of it
+        } else if new - old > 2 {
+          if floating { withAnimation(.snappy) { floating = false } }
+        } else if new - old < -2, new > 0, !floating {
+          withAnimation(.snappy) { floating = true }
+        }
+      }
+      .overlay(alignment: .top) {
+        header
+          .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 10)
+          .background(Color.canvas.ignoresSafeArea(edges: .top))
+          .offset(y: floating ? 0 : -240)
+          .allowsHitTesting(floating)
+          .accessibilityHidden(!floating)
+      }
       .background(Color.canvas)
       .refreshable { await load() }
       .task(id: "\(reload)-\(selected ?? "all")") { await load() }
@@ -68,6 +77,46 @@ struct FeedView: View {
       .onChange(of: opened) { if opened == nil { Task { await load() } } }  // likes may have changed
     }
     .authorProfiles()
+  }
+
+  private var header: some View {
+    VStack(alignment: .leading, spacing: 14) {
+      HStack {
+        // Like most social apps: tap the title to jump to the top, or to refresh when already there.
+        Button { titleTapped() } label: {
+          Text("Feed").font(.largeTitle.bold()).foregroundStyle(Color.ink)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint(offset > 1 ? "Scrolls to the top" : "Refreshes the feed")
+        Spacer()
+        Button { showSettings = true } label: {
+          Image(systemName: "gearshape").font(.system(size: 17, weight: .semibold)).frame(width: 40, height: 40)
+        }
+        .glassEffect(.regular.interactive(), in: .circle)
+        .foregroundStyle(Color.ink)
+        .accessibilityLabel("Settings")
+      }
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 8) {
+          CategoryChip(label: "All", selected: selected == nil) { selected = nil }
+          ForEach(categories, id: \.id) { c in
+            CategoryChip(label: c.label, selected: selected == c.id) { selected = c.id }
+          }
+        }
+      }
+    }
+  }
+
+  private func titleTapped() {
+    if offset > 1 {
+      withAnimation(.snappy) { position.scrollTo(edge: .top) }
+    } else if !refreshing {
+      Task {
+        withAnimation { refreshing = true }
+        await load()
+        withAnimation { refreshing = false }
+      }
+    }
   }
 
   private func load() async {

@@ -112,44 +112,31 @@ struct EdgeSwipeBack: ViewModifier {
   @State private var width: CGFloat = 400
   /// Set on a drag's first change: nil = not decided yet, else the x translation at which an edge swipe started
   /// (the screen follows the finger from there, so it doesn't jump by the recognition distance), or -1 when the
-  /// drag isn't an edge swipe (didn't start at the edge, or went more up/down than sideways).
+  /// drag isn't a back swipe (went more up/down than sideways, or the screen was still sliding).
   @State private var swipeStart: CGFloat?
   /// True while any drag is under way; it resets on its own when the system cancels the drag, which skips `onEnded`.
   @GestureState private var dragging = false
 
-  private let edge: CGFloat = 30
+  /// The strip along the left edge that the swipe starts in. It sits over the screen and takes those touches itself,
+  /// so a swipe that starts on a button (a step row, Back) doesn't also tap it, and a scroll view under it doesn't
+  /// scroll. Narrow, like the system's own back-swipe zone, so it covers only the outer few points of a button.
+  private let edge: CGFloat = 20
 
   func body(content: Content) -> some View {
     let shown = shown, drag = drag
-    let swiping = (swipeStart ?? -1) >= 0
     content
       .environment(\.slideBack, close)
-      // While the screen follows the finger, a scroll view inside must not also scroll up and down.
-      .scrollDisabled(swiping)
+      .overlay(alignment: .leading) {
+        Color.clear
+          .frame(width: edge)
+          .frame(maxHeight: .infinity)
+          .ignoresSafeArea()
+          .contentShape(Rectangle())
+          .gesture(swipe)
+          .accessibilityHidden(true)
+      }
       .visualEffect { effect, proxy in effect.offset(x: shown ? drag : proxy.size.width) }
       .shadow(color: .black.opacity(shown && drag == 0 ? 0 : 0.25), radius: 16)
-      .simultaneousGesture(
-        DragGesture(minimumDistance: 10, coordinateSpace: .global)
-          .updating($dragging) { _, state, _ in state = true }
-          .onChanged { v in
-            if swipeStart == nil {
-              let sideways = abs(v.translation.width) > abs(v.translation.height)
-              swipeStart = settled && v.startLocation.x < edge && sideways && v.translation.width > 0 ? v.translation.width : -1
-            }
-            guard let start = swipeStart, start >= 0 else { return }
-            self.drag = max(0, v.translation.width - start)
-          }
-          .onEnded { v in
-            defer { swipeStart = nil }
-            guard let start = swipeStart, start >= 0 else { return }
-            let moved = v.translation.width - start
-            if moved > width * 0.35 || v.predictedEndTranslation.width - start > width * 0.6 {
-              close()
-            } else {
-              withAnimation(.spring(duration: 0.25)) { self.drag = 0 }
-            }
-          }
-      )
       // A cancelled drag (another gesture took the touch, an alert, the app went to the background) never reaches
       // `onEnded`: put the screen back instead of leaving it half off, to jump the next time it's touched.
       .onChange(of: dragging) { _, now in
@@ -162,6 +149,29 @@ struct EdgeSwipeBack: ViewModifier {
       .onAppear {
         guard !shown else { return }  // onAppear runs again when a cover on top of this one closes
         withAnimation(.easeOut(duration: 0.3)) { self.shown = true } completion: { if !closing { settled = true } }
+      }
+  }
+
+  private var swipe: some Gesture {
+    DragGesture(minimumDistance: 10, coordinateSpace: .global)
+      .updating($dragging) { _, state, _ in state = true }
+      .onChanged { v in
+        if swipeStart == nil {
+          let sideways = abs(v.translation.width) > abs(v.translation.height)
+          swipeStart = settled && sideways && v.translation.width > 0 ? v.translation.width : -1
+        }
+        guard let start = swipeStart, start >= 0 else { return }
+        self.drag = max(0, v.translation.width - start)
+      }
+      .onEnded { v in
+        defer { swipeStart = nil }
+        guard let start = swipeStart, start >= 0 else { return }
+        let moved = v.translation.width - start
+        if moved > width * 0.35 || v.predictedEndTranslation.width - start > width * 0.6 {
+          close()
+        } else {
+          withAnimation(.spring(duration: 0.25)) { self.drag = 0 }
+        }
       }
   }
 

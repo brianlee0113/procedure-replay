@@ -259,10 +259,16 @@ def read_json(path, default):
     return json.loads(path.read_text()) if path.exists() else default
 
 
+# The configuration chosen in B3 round 2 for B4 (`tr-ost-mute-cat`): category definitions in the prompt fixed the PC
+# repair category (15/96 -> 48/48 on the iterate set). Audio and the refine pass stay off.
+APP_BUILD_CONFIG = build.Config(category_defs=True)
+
+
 def b2_builder(job: dict, set_stage) -> guides.Guide:
     """The B2 builder (pr.build) on the uploaded recording itself. A failure fails the job; there is no fallback
     to the checklist, which would show clips the instructor never filmed."""
-    guide, raw = build.build_guide(job["video_id"], job["guide_id"], marks=job.get("marks"), set_stage=set_stage)
+    guide, raw = build.build_guide(job["video_id"], job["guide_id"], cfg=APP_BUILD_CONFIG, marks=job.get("marks"),
+                                   set_stage=set_stage)
     write_json(guides.guide_dir(guide.guide_id) / "raw.json", raw)  # the model's answer, before postprocess
     return guide
 

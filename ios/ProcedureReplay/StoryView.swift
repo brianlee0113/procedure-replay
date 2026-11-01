@@ -73,6 +73,8 @@ private struct StoryPage: View {
   @State private var held = false
   /// The instructor quote, opened to its full text (Figma "Instructor quote", option A). The clip keeps playing.
   @State private var quoteOpen = false
+  /// The summary's step list, opened past the first six.
+  @State private var stepsOpen = false
   @State private var showSteps = false
   @State private var lensMode = LensMode()
   @Environment(\.openAuthor) private var openAuthor
@@ -140,6 +142,7 @@ private struct StoryPage: View {
     loadTask?.cancel()
     held = false
     quoteOpen = false
+    stepsOpen = false
     guard isActive, let response = model.response else {
       player.clear()
       if !isActive { lensMode.turnOff() }
@@ -193,7 +196,17 @@ private struct StoryPage: View {
   private func content(_ response: GuideResponse, width: CGFloat) -> some View {
     ZStack {
       background(response)
-      if step != nil, player.isPaused {
+      if step != nil, player.failed == nil, !player.isReady || player.isWaiting {
+        // Swiped onto a step whose clip isn't on the phone yet.
+        ProgressView().controlSize(.large).tint(.white)
+          .frame(width: 76, height: 76)
+          .glassEffect(.regular, in: .circle)
+          .allowsHitTesting(false)
+          .transition(.opacity)
+      } else if step != nil, let failed = player.failed {
+        Text(failed).font(.footnote).foregroundStyle(.white.opacity(0.8)).padding(40)
+          .allowsHitTesting(false)
+      } else if step != nil, player.isPaused {
         Image(systemName: "play.fill").font(.system(size: 30, weight: .semibold))
           .frame(width: 76, height: 76)
           .glassEffect(.regular, in: .circle)
@@ -231,8 +244,8 @@ private struct StoryPage: View {
     // Off a step (summary, done) there is no clip, so the middle goes forward too.
     .contentShape(Rectangle())
     .onTapGesture(coordinateSpace: .local) { location in
-      if quoteOpen {  // a tap anywhere closes the quote first
-        withAnimation(.snappy) { quoteOpen = false }
+      if quoteOpen || stepsOpen {  // a tap anywhere closes the quote or the step list first
+        withAnimation(.snappy) { quoteOpen = false; stepsOpen = false }
       } else if location.x < width / 3 {
         previous()
       } else if location.x < width * 2 / 3, step != nil {
@@ -361,18 +374,49 @@ private struct StoryPage: View {
       }
       VStack(alignment: .leading, spacing: 5) {
         Text("WHAT YOU'LL DO").font(.eyebrow).opacity(0.7)
-        ForEach(guide.steps.prefix(6)) { s in
-          HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text("\(s.index)").font(.eyebrow).opacity(0.6).frame(width: 16, alignment: .leading)
-            Text(s.title).font(.subheadline.weight(.medium)).lineLimit(1)
-          }
+        if stepsOpen {
+          // Every step; a long guide scrolls inside the list so the title stays on screen.
+          ScrollView { stepRows(guide.steps) }
+            .frame(maxHeight: 280)
+            .scrollIndicators(.hidden)
+        } else {
+          stepRows(Array(guide.steps.prefix(6)))
         }
-        if stepCount > 6 { Text("+ \(stepCount - 6) more").font(.caption).opacity(0.7).padding(.leading, 26) }
+        if stepCount > 6 {
+          Button {
+            withAnimation(.snappy) { stepsOpen.toggle() }
+          } label: {
+            Label(stepsOpen ? "Show less" : "+ \(stepCount - 6) more",
+                  systemImage: stepsOpen ? "chevron.up" : "chevron.down")
+              .font(.caption.weight(.semibold)).opacity(0.8)
+              .padding(.vertical, 4).padding(.trailing, 12)
+              .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+          .padding(.leading, 26)
+        }
       }
       Label("Tap right to start step 1", systemImage: "chevron.right")
         .font(.caption.weight(.semibold))
         .padding(.horizontal, 12).padding(.vertical, 7)
         .background(.black.opacity(0.38), in: .capsule)
+    }
+  }
+
+  /// Step names on the summary; tapping one jumps straight to that step.
+  private func stepRows(_ list: [GuideStep]) -> some View {
+    VStack(alignment: .leading, spacing: 5) {
+      ForEach(list) { s in
+        Button { page = s.index } label: {
+          HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text("\(s.index)").font(.eyebrow).opacity(0.6).frame(width: 16, alignment: .leading)
+            Text(s.title).font(.subheadline.weight(.medium)).lineLimit(1)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+      }
     }
   }
 

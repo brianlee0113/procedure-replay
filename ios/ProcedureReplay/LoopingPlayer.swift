@@ -12,6 +12,8 @@ final class LoopingPlayer {
   var elapsed = 0.0
   var duration = 0.0
   var isPaused = false
+  /// Playing, but the next frames haven't arrived yet (a streamed clip on a slow network).
+  var isWaiting = false
   /// Only mutes the player. The audio session is set once (`activateAudio`): changing it on every toggle
   /// made iOS stop the clip for a moment, so the sound button seemed to pause the video too.
   var isMuted = true {
@@ -27,6 +29,7 @@ final class LoopingPlayer {
   @ObservationIgnored private var timeObserver: Any?
   @ObservationIgnored private var statusTask: Task<Void, Never>?
   @ObservationIgnored private var playAfterScrub = false
+  @ObservationIgnored private var waitObservation: NSKeyValueObservation?
 
   init() {
     player.isMuted = true  // StepPlayerView turns sound on for guides built with a transcript; the trainee can toggle it
@@ -37,6 +40,10 @@ final class LoopingPlayer {
         guard let self else { return }
         self.elapsed = t.seconds.isFinite ? t.seconds : 0
       }
+    }
+    waitObservation = player.observe(\.timeControlStatus) { [weak self] p, _ in
+      let waiting = p.timeControlStatus == .waitingToPlayAtSpecifiedRate
+      Task { @MainActor in self?.isWaiting = waiting }
     }
   }
 

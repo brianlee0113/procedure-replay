@@ -10,7 +10,7 @@ struct RootView: View {
   @State private var flow: CreateFlow?
   @State private var openGuide: GuideLink?
   @State private var reload = 0
-  /// Bumped when your own name is tapped, so Library closes what it has open on top.
+  /// Bumped when a draft is opened from a profile, so Library closes what it has open on top.
   @State private var home = 0
   @State private var banner: String?
 
@@ -31,14 +31,18 @@ struct RootView: View {
       if let banner { Banner(text: banner).padding(.top, 8) }
     }
     .sensoryFeedback(.success, trigger: banner) { _, new in new != nil }
-    // Your own name, tapped on a card, a guide or a profile, opens Library: your profile. Leaving the Feed tab
-    // also closes whatever the Feed had open on top.
-    .environment(\.showLibrary) {
+    // A draft tapped on your profile (opened from a name, on top of other screens): close everything on top
+    // (leaving the Feed tab closes what the Feed had open), then open the Draft editor once they are gone.
+    .environment(\.editDraft) { id in
       withoutAnimation {
         openGuide = nil
         tab = .library
       }
       home += 1
+      Task {
+        try? await Task.sleep(for: .milliseconds(450))
+        flow = await CreateFlow.resuming(guideId: id)
+      }
     }
     .background(Color.canvas)
     .fullScreenCover(item: Binding(get: { flow.map(FlowBox.init) }, set: { flow = $0?.flow })) { box in

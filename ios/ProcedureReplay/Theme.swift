@@ -195,24 +195,32 @@ extension View {
 extension EnvironmentValues {
   /// Back for a screen under `edgeSwipeBack()`: slides it out to the right, then dismisses it. Nil elsewhere.
   @Entry var slideBack: (() -> Void)?
-  /// Opens a guide author's profile; your own name opens Library instead. Set by `authorProfiles()`.
+  /// Opens a guide author's profile, yours included. Set by `authorProfiles()`.
   @Entry var openAuthor: (String) -> Void = { _ in }
-  /// Closes whatever is on top and shows the Library tab, which is your own profile. Set by RootView.
-  @Entry var showLibrary: () -> Void = {}
+  /// Closes whatever is on top, goes to the Library tab and opens the draft in the Draft editor. Set by RootView,
+  /// so a draft tapped on your profile opened from a guide reaches the editor too.
+  @Entry var editDraft: (String) -> Void = { _ in }
 }
 
-/// Lets author names below this view open profiles: someone else's slides in over this screen (Back or an edge
-/// swipe closes it), your own switches to Library.
+/// Lets author names below this view open profiles. Every name slides a profile in over this screen (Back or an edge
+/// swipe closes it): someone else's shows their public guides, yours is laid out like the Library tab.
 private struct AuthorProfiles: ViewModifier {
   @State private var profile: ProfileLink?
-  @Environment(\.showLibrary) private var showLibrary
+  @Environment(\.editDraft) private var editDraft
 
   func body(content: Content) -> some View {
     content
-      .environment(\.openAuthor) { id in
-        if id == API.user { showLibrary() } else { withoutAnimation { profile = ProfileLink(id: id) } }
+      .environment(\.openAuthor) { id in withoutAnimation { profile = ProfileLink(id: id) } }
+      .fullScreenCover(item: $profile) { link in
+        Group {
+          if link.id == API.user {
+            LibraryView(reload: 0, pushed: true, openDraft: editDraft)
+          } else {
+            ProfileView(userId: link.id)
+          }
+        }
+        .edgeSwipeBack()
       }
-      .fullScreenCover(item: $profile) { link in ProfileView(userId: link.id).edgeSwipeBack() }
   }
 }
 

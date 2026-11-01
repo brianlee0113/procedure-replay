@@ -4,8 +4,10 @@ import SwiftUI
 
 struct LibraryView: View {
   let reload: Int
-  /// Bumped when your own name is tapped somewhere: close the guide open on top so Library shows.
+  /// Bumped when a draft is opened from a profile: close the guide open on top so the Draft editor can show.
   var home = 0
+  /// Opened by tapping your own name: same layout, with a Back bar instead of the "Library" title.
+  var pushed = false
   /// Opens a draft in the Draft editor, so the instructor can keep editing and publish it.
   var openDraft: (String) -> Void = { _ in }
 
@@ -15,6 +17,8 @@ struct LibraryView: View {
   /// The shelf in view; the grids page sideways, so a swipe or a tab tap moves it.
   @State private var page: Shelf? = .mine
   private var tab: Shelf { page ?? .mine }
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.slideBack) private var slideBack
 
   enum Shelf: String, CaseIterable {
     case mine = "My guides", saved = "Saved", liked = "Liked"
@@ -24,7 +28,9 @@ struct LibraryView: View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-          Text("Library").font(.largeTitle.bold()).foregroundStyle(Color.ink)
+          if !pushed {
+            Text("Library").font(.largeTitle.bold()).foregroundStyle(Color.ink)
+          }
           if let error {
             StateMessage(symbol: "wifi.exclamationmark", title: "Can't reach the Mac server", message: error,
                          actionTitle: "Try again") { Task { await load() } }
@@ -51,8 +57,9 @@ struct LibraryView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .padding(.bottom, 100)
+        .padding(.bottom, pushed ? 40 : 100)  // no tab bar over a pushed one
       }
+      .safeAreaInset(edge: .top, spacing: 0) { if pushed { navBar } }
       .background(Color.canvas)
       .refreshable { await load() }
       .task(id: reload) { await load() }
@@ -63,6 +70,25 @@ struct LibraryView: View {
       .onChange(of: opened) { if opened == nil { Task { await load() } } }
       .onChange(of: home) { withoutAnimation { opened = nil } }
     }
+  }
+
+  /// Back and your name, like someone else's profile (ProfileView).
+  private var navBar: some View {
+    ZStack {
+      Text(AppSettings.creatorName).font(.headline).foregroundStyle(Color.ink)
+      HStack {
+        Button { if let slideBack { slideBack() } else { dismiss() } } label: {
+          Image(systemName: "chevron.left").font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
+        }
+        .glassEffect(.regular.interactive(), in: .circle)
+        .foregroundStyle(Color.ink)
+        .accessibilityLabel("Back")
+        Spacer()
+      }
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 6)
+    .background(Color.canvas)
   }
 
   /// My guides, Saved and Liked side by side; swipe left or right to move between them.

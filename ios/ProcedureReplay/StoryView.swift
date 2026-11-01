@@ -71,6 +71,9 @@ private struct StoryPage: View {
   @State private var player = LoopingPlayer()
   @State private var loadTask: Task<Void, Never>?
   @State private var held = false
+  /// The instructor quote, opened to its full text (Figma "Instructor quote", option A). The clip waits meanwhile.
+  @State private var quoteOpen = false
+  @State private var pausedForQuote = false
   @State private var showSteps = false
   @State private var lensMode = LensMode()
   @Environment(\.openAuthor) private var openAuthor
@@ -114,6 +117,15 @@ private struct StoryPage: View {
       if let step, lensMode.isOn, let guide = model.response?.guide { Task { await lensMode.show(guide: guide, step: step) } }
     }
     .onChange(of: soundOn) { applySound() }
+    .onChange(of: quoteOpen) {
+      if quoteOpen, !player.isPaused {
+        pausedForQuote = true
+        player.togglePause()
+      } else if !quoteOpen, pausedForQuote {
+        pausedForQuote = false
+        if player.isPaused { player.togglePause() }
+      }
+    }
     .onChange(of: lensMode.requestedStep) {
       guard let requested = lensMode.requestedStep else { return }
       lensMode.requestedStep = nil
@@ -136,6 +148,8 @@ private struct StoryPage: View {
   private func sync() {
     loadTask?.cancel()
     held = false
+    quoteOpen = false
+    pausedForQuote = false
     guard isActive, let response = model.response else {
       player.clear()
       if !isActive { lensMode.turnOff() }
@@ -227,7 +241,9 @@ private struct StoryPage: View {
     // Off a step (summary, done) there is no clip, so the middle goes forward too.
     .contentShape(Rectangle())
     .onTapGesture(coordinateSpace: .local) { location in
-      if location.x < width / 3 {
+      if quoteOpen {  // a tap anywhere closes the quote first
+        withAnimation(.snappy) { quoteOpen = false }
+      } else if location.x < width / 3 {
         previous()
       } else if location.x < width * 2 / 3, step != nil {
         player.togglePause()
@@ -381,10 +397,7 @@ private struct StoryPage: View {
       }
       .font(.footnote)
       if let quote = step.quote {
-        Label("“\(quote.text)”", systemImage: "mic.fill")
-          .font(.caption).lineLimit(2)
-          .padding(.horizontal, 12).padding(.vertical, 8)
-          .background(.black.opacity(0.38), in: RoundedRectangle(cornerRadius: 14))
+        QuoteView(quote: quote, author: model.response?.meta.authorName ?? "", open: $quoteOpen)
       }
     }
   }
@@ -459,5 +472,49 @@ private struct StoryPage: View {
     Text(text).font(.caption.weight(.medium)).lineLimit(1)
       .padding(.horizontal, 10).padding(.vertical, 6)
       .background(.black.opacity(0.38), in: .capsule)
+  }
+}
+
+/// The instructor's words on a step page: two lines, and when that cuts them short, a tap opens the whole quote in
+/// place with who said it and when. Uncut quotes don't take the tap, so it still moves between pages.
+private struct QuoteView: View {
+  let quote: Quote
+  let author: String
+  @Binding var open: Bool
+  @State private var fullHeight: CGFloat = 0
+  @State private var shownHeight: CGFloat = 0
+
+  private var text: String { "“\(quote.text)”" }
+  private var cut: Bool { fullHeight > shownHeight + 1 }
+
+  var body: some View {
+    Button { withAnimation(.snappy) { open.toggle() } } label: {
+      HStack(alignment: .top, spacing: 8) {
+        Image(systemName: "mic.fill").font(.caption).padding(.top, 1)
+        VStack(alignment: .leading, spacing: 6) {
+          Text(text)
+            .font(open ? .footnote : .caption)
+            .lineLimit(open ? nil : 2)
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { if !open { shownHeight = $0 } }
+            .background(alignment: .topLeading) {
+              // The same text without the line limit, to tell whether two lines cut it short.
+              Text(text).font(.caption).fixedSize(horizontal: false, vertical: true).hidden()
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { fullHeight = $0 }
+            }
+          if open {
+            Text("\(author) · \(clock(quote.startS)) in the recording").font(.eyebrow).opacity(0.6)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .padding(.horizontal, 12).padding(.vertical, open ? 10 : 8)
+      .background(.black.opacity(open ? 0.62 : 0.38), in: RoundedRectangle(cornerRadius: 14))
+      .contentShape(RoundedRectangle(cornerRadius: 14))
+    }
+    .buttonStyle(.plain)
+    .allowsHitTesting(cut || open)
+    .accessibilityLabel("Instructor: \(quote.text)")
+    .accessibilityHint(cut && !open ? "Shows the whole quote" : "")
   }
 }

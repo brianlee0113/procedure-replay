@@ -72,7 +72,8 @@ struct FeedView: View {
       .sheet(isPresented: $showSettings, onDismiss: { Task { await load() } }) { SettingsView() }
       // Full screen, so the tab bar doesn't float over the guide.
       .fullScreenCover(item: $opened) { card in
-        NavigationStack { GuideView(model: GuideModel(guideId: card.guideId)) }.edgeSwipeBack()
+        // Story feed (branch story-feed): the tapped guide opens as a story; swipe up for the next card's guide.
+        StoryFeedView(cards: cards, start: card).edgeSwipeBack()
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }  // likes may have changed
     }

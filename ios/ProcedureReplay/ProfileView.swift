@@ -45,7 +45,7 @@ struct ProfileView: View {
     .refreshable { await load() }
     .task { if user == nil { await load() } }
     .fullScreenCover(item: $opened) { card in
-      NavigationStack { GuideView(model: GuideModel(guideId: card.guideId)) }.edgeSwipeBack()
+      StoryFeedView(cards: user?.guides ?? [card], start: card).edgeSwipeBack()
     }
     .onChange(of: opened) { if opened == nil { Task { await load() } } }  // likes may have changed
   }

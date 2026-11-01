@@ -73,6 +73,7 @@ struct GuideView: View {
           Text(guide.title).font(.title.bold()).foregroundStyle(Color.ink)
           author(response.meta)
           Text(guide.summary).font(.callout).foregroundStyle(Color.inkSecondary)
+          if let credit = response.credit { footage(credit) }
           HStack(spacing: 6) {
             MetaChip(systemImage: "list.bullet", text: "\(guide.steps.count) steps")
             MetaChip(systemImage: "clock", text: clock(guide.durationS))
@@ -119,6 +120,19 @@ struct GuideView: View {
     }
     .ignoresSafeArea(edges: .top)
     .toolbar(.hidden, for: .navigationBar)
+  }
+
+  /// "Footage: The Old Corona · CC BY 3.0", linking to the original video.
+  @ViewBuilder
+  private func footage(_ credit: GuideResponse.Credit) -> some View {
+    let label = Label("Footage: \(credit.creator) · \(credit.licenseLabel)", systemImage: "video")
+      .font(.caption).foregroundStyle(Color.inkSecondary)
+    if let url = URL(string: credit.sourceUrl) {
+      Link(destination: url) { label }
+        .accessibilityHint("Opens the original video")
+    } else {
+      label
+    }
   }
 
   private func hero(_ guide: Guide) -> some View {

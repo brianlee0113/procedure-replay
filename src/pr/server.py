@@ -450,6 +450,17 @@ def reactions_of(guide_id: str, user: str) -> dict:
     return {"likes": len(r["likes"]), "saves": len(r["saves"]), "liked": user in r["likes"], "saved": user in r["saves"]}
 
 
+def credit(guide: guides.Guide) -> dict | None:
+    """Who filmed the source video, for the "Footage:" line (CC BY needs it). None for the author's own recording."""
+    try:
+        row = find_row(guide.source_video_id)
+    except LicenseError:
+        return None
+    if not row["source_url"].startswith("http"):
+        return None
+    return {"creator": row["creator"].split(" (")[0], "license": row["license"], "source_url": row["source_url"]}
+
+
 def card(guide: guides.Guide, meta: guides.Meta, user: str) -> dict:
     return {"guide_id": guide.guide_id, "title": guide.title, "category": guide.category,
             "category_label": guides.CATEGORIES[guide.category], "steps": len(guide.steps),
@@ -466,7 +477,7 @@ def get_guide(guide_id: str, user: str = USER) -> dict:
         s["clip_url"] = f"/guides/{guide_id}/clips/{s['index']}.mp4"
         s["cover_url"] = f"/guides/{guide_id}/steps/{s['index']}/cover.jpg"
     return {"guide": data, "meta": meta.model_dump(), "category_label": guides.CATEGORIES[guide.category],
-            "reactions": reactions_of(guide_id, user),
+            "credit": credit(guide), "reactions": reactions_of(guide_id, user),
             "progress": read_json(PROGRESS, {}).get(user, {}).get(guide_id)}
 
 

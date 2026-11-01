@@ -225,8 +225,19 @@ struct GuideResponse: Decodable {
   var guide: Guide
   let meta: GuideMeta
   let categoryLabel: String
+  /// Who filmed the source video (CC BY needs the credit); nil for the author's own recording.
+  let credit: Credit?
   var reactions: Reactions
   var progress: Int?
+
+  struct Credit: Decodable {
+    let creator: String
+    let license: String
+    let sourceUrl: String
+
+    /// "CC-BY-3.0" -> "CC BY 3.0"
+    var licenseLabel: String { license.replacingOccurrences(of: "-", with: " ") }
+  }
 }
 
 /// Draft edit: any subset of the step's text, or new bounds (a re-cut).

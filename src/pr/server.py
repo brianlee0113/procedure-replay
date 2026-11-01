@@ -302,7 +302,10 @@ def run_job(job_id: str) -> None:
         job.update(status="done", stages={s: "done" for s in STAGES}, finished=guides.now())
     except Exception as e:  # report any failure to the app instead of leaving the job "running"
         job.update(status="error", error=f"{type(e).__name__}: {e}")
+        guide = None
     write_json(path, job)
+    if guide is not None:  # the Draft is already open; cut the loop clips while the instructor reads it
+        guides.precut(guide)
 
 
 @app.get("/categories")
@@ -487,6 +490,8 @@ def edit_guide_step(guide_id: str, index: int, edit: GuideStepEdit, user: str = 
         except ValueError as e:
             raise HTTPException(422, str(e))
         guides.save(guide, meta)
+    if "start_s" in changes or "end_s" in changes:
+        threading.Thread(target=guides.precut, args=(guide, [index]), daemon=True).start()
     return get_guide(guide_id, user)["guide"]["steps"][index - 1]
 
 

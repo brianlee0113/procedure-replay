@@ -38,6 +38,9 @@ struct RecordView: View {
     .environment(\.colorScheme, .dark)
     .sensoryFeedback(.impact(weight: .medium), trigger: camera.isRecording)
     .task { await flow.connectGlasses() }
+    // The instructor's hands are busy: keep the screen awake while the viewfinder is up, not only while recording.
+    .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+    .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
   }
 
   /// What the glasses hear, live (MWDATSpeech).

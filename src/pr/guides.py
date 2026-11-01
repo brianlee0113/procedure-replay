@@ -10,7 +10,9 @@ Until the B2 pipeline exists, `from_checklist` builds a contract guide from a co
 """
 
 import json
+import os
 import re
+import threading
 from difflib import SequenceMatcher
 from datetime import datetime, timezone
 from pathlib import Path
@@ -261,8 +263,21 @@ def clip(guide: Guide, index: int) -> Path:
     step = next(s for s in guide.steps if s.index == index)
     out = guide_dir(guide.guide_id) / "clips" / f"{index:02d}_{step.clip.start_s:.2f}_{step.clip.end_s:.2f}.mp4"
     if not out.exists():
-        trim(source_path(guide), step.clip.start_s, step.clip.end_s - step.clip.start_s, out)
+        # Cut to a temporary name, then rename: a request that arrives mid-cut never gets half a file.
+        tmp = out.with_name(f".{out.stem}.{threading.get_ident()}.mp4")
+        trim(source_path(guide), step.clip.start_s, step.clip.end_s - step.clip.start_s, tmp)
+        os.replace(tmp, out)
     return out
+
+
+def precut(guide: Guide, indices: list[int] | None = None) -> None:
+    """Cut the loop clips ahead of time, so the step player doesn't wait for ffmpeg on first open."""
+    for step in guide.steps:
+        if indices is None or step.index in indices:
+            try:
+                clip(guide, step.index)
+            except Exception as e:  # a missing clip is cut again on request; don't fail the caller
+                print(f"precut {guide.guide_id} step {step.index}: {type(e).__name__}: {e}")
 
 
 def cover(guide: Guide, index: int | None = None) -> Path:

@@ -1,7 +1,13 @@
 # ProcedureReplay
 
-An instructor wears Meta glasses and does a job while explaining it out loud. ProcedureReplay turns that one
-recording into a step-by-step guide that trainees follow on their iPhone.
+**Wear Meta glasses, do the job and talk it through: Muse Spark turns that one recording into a step-by-step
+video guide that anyone can follow on their phone.**
+
+<!-- Hero: docs/assets/hero.mp4, built by scripts/make_readme_hero.py -->
+<a href="docs/assets/hero.mp4"><img src="docs/assets/hero_poster.png" alt="Left: a first-person video of a faucet repair with a timeline split into 10 steps. Right: the iPhone app looping the clip for the current step, with its instruction and done-when check." width="100%"></a>
+
+<sub>A real run: a 78-second first-person recording becomes a 10-step guide (Muse Spark, about $0.007). Phone screen sped up per phase.
+Footage: [The Old Corona](https://www.youtube.com/watch?v=LPwPomA7BfM), CC BY 3.0.</sub>
 
 Meta's multimodal model (Muse Spark, with Muse Voice Transcribe for the narration) splits the recording into
 steps and writes, for each step, an instruction, a "done when" check and the instructor's own words; the server
@@ -34,6 +40,8 @@ cuts overlaps and drops quotes that aren't in the transcript; the raw answer is 
   the frozen configuration (`--i-am-at-b4`).
 
 Dev set (76 videos × 3 runs, config `tr-ost-mute`, about $4.4 of API calls), step hit F1 pooled per domain:
+
+<img src="docs/assets/results_dev.svg" alt="Step hit F1 on the dev set: PC repair 0.44 vs 0.25 (better on 30 of 32 videos), drill bit 0.57 vs 0.37 (23 of 35), omelet 0.39 vs 0.15 (7 of 9)." width="100%">
 
 | Domain | Videos | Guide builder | Uniform + captions | Videos where the builder wins | Temporal IoU F1 (builder / uniform) |
 | --- | --- | --- | --- | --- | --- |

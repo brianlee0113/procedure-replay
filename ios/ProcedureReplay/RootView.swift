@@ -9,6 +9,8 @@ struct RootView: View {
   @State private var tab = Tab.feed
   @State private var flow: CreateFlow?
   @State private var openGuide: GuideLink?
+  /// `--open-story=<id>[:<step>]`: the Feed's story for that guide, as tapping its card does (story-feed checks).
+  @State private var openStory: StoryLink?
   @State private var reload = 0
   /// Bumped when a draft is opened from a profile, so Library closes what it has open on top.
   @State private var home = 0
@@ -58,8 +60,17 @@ struct RootView: View {
     .fullScreenCover(item: $openGuide) { link in
       NavigationStack { GuideView(model: GuideModel(guideId: link.id), playing: link.autoplayStep) }.edgeSwipeBack()
     }
+    .fullScreenCover(item: $openStory) { link in
+      StoryFeedView(cards: link.cards, start: link.start, startStep: link.step).edgeSwipeBack()
+    }
     .task {
       let args = ProcessInfo.processInfo.arguments
+      if let arg = args.first(where: { $0.hasPrefix("--open-story=") })?.replacingOccurrences(of: "--open-story=", with: "") {
+        let parts = arg.split(separator: ":").map(String.init)
+        if let cards = try? await API.feed(), let start = cards.first(where: { $0.guideId == parts[0] }) ?? cards.first {
+          openStory = StoryLink(cards: cards, start: start, step: parts.count > 1 ? Int(parts[1]) : nil)
+        }
+      }
       if args.contains("--tab=library") { tab = .library }
       // `--open-guide=<id>` opens a guide as a trainee; `--autorun-a4` also plays step 3 and advances.
       if let id = args.first(where: { $0.hasPrefix("--open-guide=") })?.replacingOccurrences(of: "--open-guide=", with: "") {
@@ -151,6 +162,13 @@ struct RootView: View {
       .background(tab == t ? Color.track : .clear, in: .capsule)
     }
   }
+}
+
+private struct StoryLink: Identifiable {
+  let cards: [GuideCard]
+  let start: GuideCard
+  let step: Int?
+  var id: String { start.guideId }
 }
 
 private struct GuideLink: Identifiable {

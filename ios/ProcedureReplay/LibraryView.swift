@@ -43,7 +43,9 @@ struct LibraryView: View {
             ScrollView(.horizontal) {
               LazyHStack(spacing: 10) {
                 ForEach(library.continue) { card in
-                  ContinueCard(card: card) { withoutAnimation { opened = OpenedGuide(card: card, step: card.step) } }
+                  ContinueCard(card: card) {
+                    withoutAnimation { opened = OpenedGuide(card: card, step: card.step, cards: library.continue) }
+                  }
                     .containerRelativeFrame(.horizontal)
                 }
               }
@@ -65,7 +67,8 @@ struct LibraryView: View {
       .task(id: reload) { await load() }
       // Full screen, so the tab bar doesn't float over the guide.
       .fullScreenCover(item: $opened) { o in
-        NavigationStack { GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step) }.edgeSwipeBack()
+        // Story feed (branch story-feed): Continue lands on the step where you stopped, skipping the summary.
+        StoryFeedView(cards: o.cards, start: o.card, startStep: o.step).edgeSwipeBack()
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }
       .onChange(of: home) { withoutAnimation { opened = nil } }
@@ -160,7 +163,11 @@ struct LibraryView: View {
       Text(emptyMessage(shelf)).font(.callout).foregroundStyle(Color.inkSecondary).padding(.top, 8)
     } else {
       CoverGrid(cards: cards, showsStatus: shelf == .mine) { card in
-        if card.visibility == "draft" { openDraft(card.guideId) } else { withoutAnimation { opened = OpenedGuide(card: card, step: nil) } }
+        if card.visibility == "draft" {
+          openDraft(card.guideId)
+        } else {
+          withoutAnimation { opened = OpenedGuide(card: card, step: nil, cards: cards.filter { $0.visibility != "draft" }) }
+        }
       }
     }
   }
@@ -179,6 +186,8 @@ private struct OpenedGuide: Hashable, Identifiable {
   var id: String { card.guideId }
   let card: GuideCard
   let step: Int?
+  /// The shelf it was opened from: swipe up or down through these.
+  let cards: [GuideCard]
 }
 
 

@@ -3,8 +3,7 @@
 **Wear Meta glasses, do the job and talk it through: Muse Spark turns that one recording into a step-by-step
 video guide that anyone can follow on their phone.**
 
-<!-- Hero: docs/assets/hero.mp4, built by scripts/make_readme_hero.py -->
-<a href="docs/assets/hero.mp4"><img src="docs/assets/hero_poster.png" alt="Left: a first-person video of a faucet repair with a timeline split into 10 steps. Right: the iPhone app looping the clip for the current step, with its instruction and done-when check." width="100%"></a>
+https://github.com/user-attachments/assets/5655d4d5-2e1c-417e-89b2-d6f4be048f55
 
 <sub>A real run: a 78-second first-person recording becomes a 10-step guide (Muse Spark, about $0.007). Phone screen sped up per phase.
 Footage: [The Old Corona](https://www.youtube.com/watch?v=LPwPomA7BfM), CC BY 3.0.</sub>

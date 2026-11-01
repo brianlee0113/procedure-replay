@@ -353,6 +353,7 @@ private struct StoryPage: View {
       pill(response.categoryLabel)
       Text(guide.title).font(.title.bold()).lineLimit(3).fixedSize(horizontal: false, vertical: true)
       Text(guide.summary).font(.subheadline).opacity(0.85).lineLimit(2)
+      if let credit = response.credit { footage(credit) }
       HStack(spacing: 6) {
         pill("\(stepCount) steps")
         pill(clock(guide.durationS))
@@ -372,6 +373,20 @@ private struct StoryPage: View {
         .font(.caption.weight(.semibold))
         .padding(.horizontal, 12).padding(.vertical, 7)
         .background(.black.opacity(0.38), in: .capsule)
+    }
+  }
+
+  /// "Footage: The Old Corona · CC BY 3.0", linking to the original video (CC BY needs the credit).
+  @ViewBuilder
+  private func footage(_ credit: GuideResponse.Credit) -> some View {
+    let label = Label("Footage: \(credit.creator) · \(credit.licenseLabel)", systemImage: "video")
+      .font(.caption).opacity(0.8).lineLimit(1)
+    if let url = URL(string: credit.sourceUrl) {
+      Link(destination: url) { label }
+        .tint(.white)
+        .accessibilityHint("Opens the original video")
+    } else {
+      label
     }
   }
 

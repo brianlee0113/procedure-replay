@@ -39,3 +39,6 @@ ios/build/
 ios/build-device/
 ios/*.xcodeproj/
 ios/ProcedureReplay/Resources/glasses_feed.json
+
+# README hero video (our own edit; footage credited in README)
+!docs/assets/*.mp4

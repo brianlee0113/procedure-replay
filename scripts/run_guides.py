@@ -14,6 +14,7 @@ the folder to rebuild. Summary: results/summary_guides_<set>.md.
 
 import argparse
 import csv
+import dataclasses
 import functools
 import json
 import statistics
@@ -100,8 +101,17 @@ def run_one(video_id: str, task: str, cfg: Config, run: int, baseline: bool, dry
         if dry:
             return None
         length = domain_length(task)
+        # Refine variants refine the stored first pass of the same config without refine, so the comparison
+        # changes only the second pass (and it is not paid for twice).
+        first = None
+        if cfg.refine and not baseline:
+            base_raw = RUNS / dataclasses.replace(cfg, refine=False).label() / f"run{run}" / video_id / "raw.json"
+            first = json.loads(base_raw.read_text()) if base_raw.exists() else None
         guide, raw = build_guide(video_id, f"eval_{video_id}", cfg, client,
-                                 segments=(lambda d: uniform_steps(d, length)) if baseline else None)
+                                 segments=(lambda d: uniform_steps(d, length)) if baseline else None,
+                                 first_pass=first)
+        if first is not None:
+            raw["first_pass_from"] = str(base_raw.relative_to(ROOT))
         write_once(folder / "raw.json", raw)
         write_once(folder / "guide.json", guide.model_dump())
     guide = Guide.model_validate_json((folder / "guide.json").read_text())
@@ -223,6 +233,9 @@ def main() -> None:
     ap.add_argument("--audio", action="store_true")
     ap.add_argument("--seeded", action="store_true", help="give the expert step names (ablation 2)")
     ap.add_argument("--model")
+    ap.add_argument("--category-defs", action="store_true", help="define each category in the prompt")
+    ap.add_argument("--refine", action="store_true", help="second pass per step: tighten bounds, split mixed steps")
+    ap.add_argument("--refine-no-split", action="store_true", help="with --refine, only tighten bounds")
     ap.add_argument("--no-baseline", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--workers", type=int, default=4)
@@ -234,7 +247,8 @@ def main() -> None:
         sys.exit("--seeded needs per-task step names; not wired yet")
 
     cfg = Config(transcript=not args.no_transcript, on_screen_text=not args.no_on_screen_text, audio=args.audio,
-                 model=args.model)
+                 model=args.model, category_defs=args.category_defs, refine=args.refine or args.refine_no_split,
+                 refine_split=not args.refine_no_split)
     runs = [int(r) for r in args.runs.split(",")]
     manifest = {r["video_id"]: r for r in load_manifest()}
     todo = ([(v, task_of(v, manifest)) for v in args.videos.split(",")] if args.videos else videos_of(args.set))

@@ -6,17 +6,22 @@ config.transcript (transcribed from the original audio, numbered #0, #1, ...), t
 instructor's Mark step times when the app sends them. Nothing derived from labels or the task config goes in
 (no step count, task name, keysteps or object list), except the step names of the seeded ablation.
 
-One Muse Spark call writes the whole guide. `postprocess` then makes it valid: steps sorted, clamped to the
+One Muse Spark call writes the whole guide. With config.refine, a second pass then looks at each step again in a
+short window around it (one call per step) and tightens its start and end to the action, or splits a step that
+holds several separate actions (B3 round 2: about a third of the missed label steps were boundary misses).
+`postprocess` then makes it valid: steps sorted, clamped to the
 video, overlaps cut at their midpoint, re-indexed, the loop clip padded by CLIP_PAD_S, the cover at the middle.
 A quote whose words are not in its transcript turns is set to null before the app can show it, and the drop is
 recorded in provenance; the untouched model answer is returned too, so evaluation scores the model, not the
 filter.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 
 from pr import guides
 from pr.client import MetaClient
+from pr.frames import PROXY_DIR, trim
 from pr.track import prepare
 from pr.transcribe import context_block, spoken, transcribe
 
@@ -31,6 +36,11 @@ class Config:
     audio: bool = False           # keep the sound in the proxy (ablation 4; off was better in the review runs)
     seed_names: list[str] | None = None  # expert step names (ablation 2 only)
     model: str | None = None      # overrides MODEL_NAME
+    category_defs: bool = False   # define each category in the prompt (B3 round 2)
+    refine: bool = False          # second pass per step: tighten bounds, split mixed steps (B3 round 2)
+    # Iterate set, B3 round 2: refine with split lost 0.08-0.14 step hit F1 (over-splits); bounds-only was
+    # within noise of category_defs alone at ~3x the cost. Kept off; category_defs is the B4 config.
+    refine_split: bool = True     # with refine, may the second pass split a step
 
     def label(self) -> str:
         """Short id for result folders, e.g. 'tr-ost-mute'."""
@@ -38,6 +48,10 @@ class Config:
                  "audio" if self.audio else "mute"]
         if self.seed_names:
             parts.append("seeded")
+        if self.category_defs:
+            parts.append("cat")
+        if self.refine:
+            parts.append("refine" if self.refine_split else "refine-nosplit")
         if self.model:
             parts.append(self.model)
         return "-".join(parts)
@@ -80,7 +94,7 @@ A clock in the top-left corner shows elapsed time as MM:SS.s. The video is {dura
 For the guide:
 - title: names the job and the object, e.g. "Replace the toner cartridge in a laser printer"
 - summary: 1-2 sentences: what the job is and the most important caution
-- category: one of {categories}; category_alternatives: up to 2 others that also fit
+- category: one of {categories}; category_alternatives: up to 2 others that also fit{category_defs}
 - tools: tools used, if any
 
 For each step:
@@ -125,6 +139,22 @@ OST_RULE = """- on_screen_text: text visible in the video during the step that m
   captions); [] if none
 """
 
+CATEGORY_DEFS = {
+    "repair_maintenance": "fixing, servicing or replacing a part of a machine, device, vehicle or fixture "
+                          "(a bike, a faucet, a washing machine), including opening a device to swap a part",
+    "electronics": "building, soldering or wiring circuits and electronic components themselves",
+    "workshop_tools": "setting up, adjusting or maintaining a hand or power tool itself (sharpening a chisel, setting up a saw)",
+    "assembly": "putting a product together from its parts (furniture, kits)",
+    "cooking": "preparing food or drinks",
+    "cleaning_household": "cleaning, laundry, tidying and other chores",
+    "crafts": "making things by hand: paper, sewing, knots, painting",
+    "other": "anything else",
+}
+
+CATEGORY_RULE = """
+  Categories, by what is done rather than what the object is made of:
+{defs}"""
+
 MARKS = """
 While recording, the person tapped "Mark step" at these seconds: {marks}. Treat them as hints of where a
 step starts or ends, not as exact boundaries.
@@ -139,11 +169,104 @@ def prompt(cfg: Config, duration: float, context: str, marks: list[float],
         seeded = STEPS_SEEDED.format(names="\n".join(f"{i}. {n}" for i, n in enumerate(cfg.seed_names, 1)))
     else:
         seeded = STEPS_UNSEEDED
+    defs = CATEGORY_RULE.format(defs="\n".join(f"  - {k}: {v}" for k, v in CATEGORY_DEFS.items())) \
+        if cfg.category_defs else ""
     return PROMPT.format(
-        duration=duration, steps_rule=seeded, categories=", ".join(guides.CATEGORIES),
+        duration=duration, steps_rule=seeded, categories=", ".join(guides.CATEGORIES), category_defs=defs,
         quote_rule=QUOTE_RULE if context else NO_QUOTE_RULE,
         ost_rule=OST_RULE if cfg.on_screen_text else "",
         context=context, marks=MARKS.format(marks=", ".join(f"{m:.1f}" for m in marks)) if marks else "")
+
+
+REFINE_PROMPT = """This clip is a window of a first-person video of a hands-on job. The clock in its top-left corner
+shows time in the original video (MM:SS.s); the window runs {w0:.1f}–{w1:.1f} s.
+
+A guide written from the whole video has this step here:
+  title: {title}
+  instruction: {instruction}
+  current bounds: {start:.1f}–{end:.1f} s
+{neighbours}
+Look at what the hands do in the window and give the step's exact bounds, read from the clock:
+- start_s: the moment the hands begin this action (reaching for the object counts; looking around does not)
+- end_s: the moment the action's result is reached and the hands move on
+Keep the bounds inside the window, and do not take time that belongs to the steps before or after.
+{split_rule}"""
+
+SPLIT_RULE = """If, and only if, the step clearly holds two or more separate actions, each with its own visible
+result, give one part per action in time order (at most 3); otherwise give exactly one part. Each part has a
+short imperative title, a one- or two-sentence instruction, done_when (the visible end state), key_objects,
+start_s and end_s."""
+
+NO_SPLIT_RULE = """Give exactly one part: the same step with its corrected start_s and end_s (keep the title,
+instruction, done_when and key_objects as they are)."""
+
+REFINE_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["parts", "why"],
+    "properties": {
+        "parts": {"type": "array", "items": {"type": "object", "additionalProperties": False,
+                  "required": ["title", "instruction", "done_when", "key_objects", "start_s", "end_s"],
+                  "properties": {"title": {"type": "string"}, "instruction": {"type": "string"},
+                                 "done_when": {"type": "string"}, "start_s": {"type": "number"},
+                                 "end_s": {"type": "number"},
+                                 "key_objects": {"type": "array", "items": {"type": "string"}}}}},
+        "why": {"type": "string"},
+    },
+}
+REFINE_PAD_MIN_S, REFINE_PAD_MAX_S = 4.0, 10.0  # window = step +- half its length, clamped to these
+REFINE_WORKERS = 3
+
+
+def refine_window(start: float, end: float, duration: float) -> tuple[float, float]:
+    pad = min(REFINE_PAD_MAX_S, max(REFINE_PAD_MIN_S, (end - start) / 2))
+    return max(0.0, start - pad), min(duration, end + pad)
+
+
+def refine_step(steps: list[dict], i: int, prepared: dict, duration: float, cfg: Config,
+                client: MetaClient) -> dict:
+    """One step looked at again in its window -> {"parts": [...], "why", "window"}; parts keep the step's
+    quote and on-screen text on the first part (the quote check drops a quote that ends up outside its clip)."""
+    s = steps[i]
+    w0, w1 = refine_window(s["start_s"], s["end_s"], duration)
+    vid = prepared["video_id"]
+    clip = PROXY_DIR / "refine" / f"{vid}__{w0:.2f}-{w1:.2f}.mp4"
+    if not clip.exists():
+        trim(prepared["proxy"], w0, w1 - w0, clip)
+    near = []
+    if i > 0:
+        near.append(f"  step before: {steps[i - 1]['title']} ({steps[i - 1]['start_s']:.1f}–{steps[i - 1]['end_s']:.1f} s)")
+    if i + 1 < len(steps):
+        near.append(f"  step after: {steps[i + 1]['title']} ({steps[i + 1]['start_s']:.1f}–{steps[i + 1]['end_s']:.1f} s)")
+    text = REFINE_PROMPT.format(w0=w0, w1=w1, title=s["title"], instruction=s["instruction"], start=s["start_s"],
+                                end=s["end_s"], neighbours="\n".join(near) + ("\n" if near else ""),
+                                split_rule=SPLIT_RULE if cfg.refine_split else NO_SPLIT_RULE)
+    answer = client.spark_json(client.upload(clip), text, REFINE_SCHEMA, "guide_step_refine", f"{vid}#step{i + 1}",
+                               purpose="refine", model=cfg.model)
+    parts = sorted(answer["parts"], key=lambda p: p["start_s"])[:3] if cfg.refine_split else answer["parts"][:1]
+    out = []
+    for k, p in enumerate(parts):
+        a, b = max(w0, min(p["start_s"], w1)), max(w0, min(p["end_s"], w1))
+        if b - a < MIN_STEP_S:
+            continue
+        base = s if not cfg.refine_split or len(parts) == 1 else {**s, **{f: p[f] for f in
+                                                  ("title", "instruction", "done_when", "key_objects")}}
+        extra = {} if k == 0 else {"quote_text": "", "quote_turn_ids": [], "on_screen_text": []}
+        out.append({**base, **extra, "start_s": a, "end_s": b})
+    if not out:  # nonsense bounds: keep the first pass
+        out = [s]
+    return {"parts": out, "why": answer["why"], "window": [w0, w1]}
+
+
+def refine(raw: dict, prepared: dict, duration: float, cfg: Config, client: MetaClient) -> dict:
+    """The first-pass answer with every step looked at again; the first pass is kept under "first_pass"."""
+    steps = sorted(raw["steps"], key=lambda s: (s["start_s"], s["end_s"]))
+    with ThreadPoolExecutor(REFINE_WORKERS) as pool:
+        done = list(pool.map(lambda i: refine_step(steps, i, prepared, duration, cfg, client), range(len(steps))))
+    new = [p for d in done for p in d["parts"]]
+    for k, p in enumerate(new, 1):
+        p["index"] = k
+    return {**raw, "steps": new, "first_pass": raw["steps"],
+            "refine": [{"index": s["index"], "window": d["window"], "parts": len(d["parts"]), "why": d["why"]}
+                       for s, d in zip(steps, done)]}
 
 
 def postprocess(raw: dict, *, guide_id: str, video_id: str, duration: float, cfg: Config,
@@ -205,10 +328,11 @@ def postprocess(raw: dict, *, guide_id: str, video_id: str, duration: float, cfg
 
 def build_guide(video_id: str, guide_id: str, cfg: Config | None = None, client: MetaClient | None = None,
                 marks: list[float] | None = None, set_stage=lambda stage: None,
-                segments=None) -> tuple[guides.Guide, dict]:
+                segments=None, first_pass: dict | None = None) -> tuple[guides.Guide, dict]:
     """Build a guide for a licensed video. Returns (guide, raw model answer). set_stage reports progress to
     the app job: transcribe, read_text, split, write. `segments` fixes the split for the uniform + captions
-    baseline: a list of (start, end), or a function of the proxy's duration returning one."""
+    baseline: a list of (start, end), or a function of the proxy's duration returning one. `first_pass` is a stored
+    first-pass answer to refine instead of asking again (evaluation: refine variants share one first pass)."""
     cfg, client = cfg or Config(), client or MetaClient()
     set_stage("transcribe")
     transcript = transcribe(video_id) if cfg.transcript else None
@@ -221,8 +345,11 @@ def build_guide(video_id: str, guide_id: str, cfg: Config | None = None, client:
     set_stage("split")
     if callable(segments):
         segments = segments(duration)
-    raw = client.spark_json(p["file_id"], prompt(cfg, duration, context, marks or [], segments), schema(cfg),
-                            "guide", p["video_id"], purpose="baseline" if segments else "guide", model=cfg.model)
+    raw = first_pass or client.spark_json(p["file_id"], prompt(cfg, duration, context, marks or [], segments),
+                                          schema(cfg), "guide", p["video_id"],
+                                          purpose="baseline" if segments else "guide", model=cfg.model)
+    if cfg.refine and not segments:
+        raw = refine(raw, p, duration, cfg, client)
     set_stage("write")
     provenance = {"model": cfg.model or client.spark_model, "prompt_version": PROMPT_VERSION,
                   "config": asdict(cfg), "builder": "pr.build" if not segments else "pr.build:uniform+captions",

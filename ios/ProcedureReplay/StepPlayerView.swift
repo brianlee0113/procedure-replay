@@ -383,7 +383,7 @@ struct StepPlayerView: View {
   private var clipBar: some View {
     GeometryReader { g in
       let edge = SheetTopEdge(radius: sheetRadius)
-      let width: CGFloat = scrubbing ? 4 : 1.5
+      let width: CGFloat = scrubbing ? 5 : 2.25
       ZStack {
         edge.stroke(.white.opacity(scrubbing ? 0.5 : 0.3), style: StrokeStyle(lineWidth: width, lineCap: .round))
         edge.trim(from: 0, to: SheetTopEdge.trim(forX: clipFraction, width: g.size.width, radius: sheetRadius))

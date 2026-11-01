@@ -75,6 +75,13 @@ private struct StoryPage: View {
   @State private var quoteOpen = false
   /// The summary's step list, opened past the first six.
   @State private var stepsOpen = false
+  /// The summary fills its blue segment and moves on to step 1 by itself, once per guide.
+  /// After that (or after the trainee leaves it), coming back to it stays put to be read.
+  @State private var summaryProgress = 0.0
+  @State private var summaryPaused = false
+  @State private var summarySeen = false
+  @State private var summaryTask: Task<Void, Never>?
+  private static let summarySeconds = 4.0
   @State private var showSteps = false
   @State private var lensMode = LensMode()
   @Environment(\.openAuthor) private var openAuthor
@@ -127,6 +134,7 @@ private struct StoryPage: View {
     .onChange(of: lensMode.replayRequests) { player.restart() }
     .onDisappear {
       loadTask?.cancel()
+      summaryTask?.cancel()
       player.clear()
       lensMode.turnOff()
     }
@@ -140,9 +148,13 @@ private struct StoryPage: View {
   /// Only the guide on screen plays, and only on a step page.
   private func sync() {
     loadTask?.cancel()
+    summaryTask?.cancel()
     held = false
     quoteOpen = false
     stepsOpen = false
+    summaryPaused = false
+    if page != 0 { summarySeen = true }
+    if !summarySeen { summaryProgress = 0 }
     guard isActive, let response = model.response else {
       player.clear()
       if !isActive { lensMode.turnOff() }
@@ -158,7 +170,10 @@ private struct StoryPage: View {
     } else {
       player.clear()
       // From the summary, step 1 is next: have its clip on the phone before the tap.
-      if page == 0, let first = response.guide.steps.first { prefetch(first) }
+      if page == 0, let first = response.guide.steps.first {
+        prefetch(first)
+        if !summarySeen { runSummaryTimer() }
+      }
     }
   }
 
@@ -188,6 +203,26 @@ private struct StoryPage: View {
     Task.detached { _ = try? await ClipCache.shared.file(for: API.url(path), key: key) }
   }
 
+  /// Fills the summary's segment over `summarySeconds`, then turns to step 1. Holding the screen,
+  /// a middle tap, or the open step list stops the clock.
+  private func runSummaryTimer() {
+    guard stepCount > 0 else { return }
+    summaryTask = Task {
+      let tick = 1.0 / 30
+      while !Task.isCancelled {
+        try? await Task.sleep(for: .seconds(tick))
+        guard !Task.isCancelled, page == 0 else { return }
+        if held || stepsOpen || summaryPaused || showSteps { continue }
+        summaryProgress = min(summaryProgress + tick / Self.summarySeconds, 1)
+        if summaryProgress >= 1 {
+          summarySeen = true
+          page = 1
+          return
+        }
+      }
+    }
+  }
+
   private func next() { if page <= stepCount { page += 1 } }
   private func previous() { if page > 0 { page -= 1 } }
 
@@ -206,7 +241,7 @@ private struct StoryPage: View {
       } else if step != nil, let failed = player.failed {
         Text(failed).font(.footnote).foregroundStyle(.white.opacity(0.8)).padding(40)
           .allowsHitTesting(false)
-      } else if step != nil, player.isPaused {
+      } else if (step != nil && player.isPaused) || (page == 0 && summaryPaused) {
         Image(systemName: "play.fill").font(.system(size: 30, weight: .semibold))
           .frame(width: 76, height: 76)
           .glassEffect(.regular, in: .circle)
@@ -250,18 +285,20 @@ private struct StoryPage: View {
         previous()
       } else if location.x < width * 2 / 3, step != nil {
         player.togglePause()
+      } else if location.x < width * 2 / 3, page == 0, !summarySeen {
+        summaryPaused.toggle()
       } else {
         next()
       }
     }
     .onLongPressGesture(minimumDuration: 0.25, maximumDistance: 12) {
-      guard step != nil else { return }
+      guard step != nil || page == 0 else { return }
       held = true
-      player.player.pause()
+      if step != nil { player.player.pause() }
     } onPressingChanged: { pressing in
       if !pressing, held {
         held = false
-        player.player.play()
+        if step != nil { player.player.play() }
       }
     }
     .accessibilityAction(named: "Next page") { next() }
@@ -301,7 +338,7 @@ private struct StoryPage: View {
   private func fill(_ i: Int) -> CGFloat {
     if isDone || i < page { return 1 }
     if i > page { return 0 }
-    if page == 0 { return 1 }
+    if page == 0 { return summarySeen ? 1 : CGFloat(summaryProgress) }
     guard player.isReady, player.duration > 0 else { return 0 }
     return CGFloat(min(max(player.elapsed / player.duration, 0), 1))
   }

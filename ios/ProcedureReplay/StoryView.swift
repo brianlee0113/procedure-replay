@@ -71,9 +71,8 @@ private struct StoryPage: View {
   @State private var player = LoopingPlayer()
   @State private var loadTask: Task<Void, Never>?
   @State private var held = false
-  /// The instructor quote, opened to its full text (Figma "Instructor quote", option A). The clip waits meanwhile.
+  /// The instructor quote, opened to its full text (Figma "Instructor quote", option A). The clip keeps playing.
   @State private var quoteOpen = false
-  @State private var pausedForQuote = false
   @State private var showSteps = false
   @State private var lensMode = LensMode()
   @Environment(\.openAuthor) private var openAuthor
@@ -117,15 +116,7 @@ private struct StoryPage: View {
       if let step, lensMode.isOn, let guide = model.response?.guide { Task { await lensMode.show(guide: guide, step: step) } }
     }
     .onChange(of: soundOn) { applySound() }
-    .onChange(of: quoteOpen) {
-      if quoteOpen, !player.isPaused {
-        pausedForQuote = true
-        player.togglePause()
-      } else if !quoteOpen, pausedForQuote {
-        pausedForQuote = false
-        if player.isPaused { player.togglePause() }
-      }
-    }
+
     .onChange(of: lensMode.requestedStep) {
       guard let requested = lensMode.requestedStep else { return }
       lensMode.requestedStep = nil
@@ -149,7 +140,6 @@ private struct StoryPage: View {
     loadTask?.cancel()
     held = false
     quoteOpen = false
-    pausedForQuote = false
     guard isActive, let response = model.response else {
       player.clear()
       if !isActive { lensMode.turnOff() }

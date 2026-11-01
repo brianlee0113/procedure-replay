@@ -1,6 +1,6 @@
 // Story feed (experiment, branch story-feed; Figma "Ideation — story feed (11-01)"): a guide opens as a story.
 // Page 0 sums the guide up (title, summary, tools, every step name), then one step per page, then a done page.
-// Tap the right two thirds for the next page, the left third for the previous one, hold to pause. Swipe up or down
+// Tap the left third for the previous page, the middle to pause or resume, the right third for the next; hold to pause. Swipe up or down
 // for the next or previous guide, which always starts at its summary. No tab bar; × or a left-edge swipe goes back.
 
 import AVFoundation
@@ -189,6 +189,12 @@ private struct StoryPage: View {
   private func content(_ response: GuideResponse, width: CGFloat) -> some View {
     ZStack {
       background(response)
+      if step != nil, player.isPaused {
+        Image(systemName: "play.fill").font(.system(size: 30, weight: .semibold))
+          .frame(width: 76, height: 76)
+          .glassEffect(.regular, in: .circle)
+          .allowsHitTesting(false)
+      }
       LinearGradient(stops: [.init(color: .black.opacity(0.55), location: 0), .init(color: .clear, location: 0.22),
                              .init(color: .clear, location: 0.42), .init(color: .black.opacity(0.6), location: 0.68),
                              .init(color: .black.opacity(0.88), location: 1)],
@@ -217,10 +223,17 @@ private struct StoryPage: View {
     }
     .foregroundStyle(.white)
     .environment(\.colorScheme, .dark)
-    // Like a story: the right two thirds go forward, the left third back. Buttons on top keep their own taps.
+    // Like the step player: left third back, middle pause/resume, right third forward. Buttons keep their own taps.
+    // Off a step (summary, done) there is no clip, so the middle goes forward too.
     .contentShape(Rectangle())
     .onTapGesture(coordinateSpace: .local) { location in
-      if location.x < width / 3 { previous() } else { next() }
+      if location.x < width / 3 {
+        previous()
+      } else if location.x < width * 2 / 3, step != nil {
+        player.togglePause()
+      } else {
+        next()
+      }
     }
     .onLongPressGesture(minimumDuration: 0.25, maximumDistance: 12) {
       guard step != nil else { return }
@@ -234,6 +247,7 @@ private struct StoryPage: View {
     }
     .accessibilityAction(named: "Next page") { next() }
     .accessibilityAction(named: "Previous page") { previous() }
+    .accessibilityAction(named: player.isPaused ? "Play" : "Pause") { player.togglePause() }
   }
 
   @ViewBuilder

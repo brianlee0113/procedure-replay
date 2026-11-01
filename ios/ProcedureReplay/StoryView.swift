@@ -253,9 +253,11 @@ private struct StoryPage: View {
   private var storyBar: some View {
     HStack(spacing: 4) {
       ForEach(0...stepCount, id: \.self) { i in
-        Capsule().fill(.white.opacity(0.35))
+        // The summary is a different kind of page from the steps, so its segment is AI blue, not white.
+        let tint = i == 0 ? Color(red: 0.45, green: 0.62, blue: 1) : .white
+        Capsule().fill(tint.opacity(0.35))
           .overlay(alignment: .leading) {
-            GeometryReader { g in Capsule().fill(.white).frame(width: g.size.width * fill(i)) }
+            GeometryReader { g in Capsule().fill(tint).frame(width: g.size.width * fill(i)) }
           }
           .frame(height: 3)
       }

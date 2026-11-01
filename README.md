@@ -1,4 +1,6 @@
-# ProcedureReplay
+# Firsthand
+
+**Learn it firsthand.** (Formerly ProcedureReplay; the code, Xcode target and bundle ID keep that name.)
 
 **Wear Meta glasses, do the job and talk it through: Muse Spark turns that one recording into a step-by-step
 video guide that anyone can follow on their phone.**

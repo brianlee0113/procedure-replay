@@ -147,7 +147,11 @@ struct GuideView: View {
         .glassEffect(.regular.interactive(), in: .circle)
         .accessibilityLabel("Back")
         Spacer()
-        ShareLink(item: API.url("/guides/\(guide.guideId)")) {
+        // The text that travels with the link in Messages or Mail.
+        ShareLink(item: API.url("/guides/\(guide.guideId)"),
+                  subject: Text("Learn it firsthand: \(guide.title)"),
+                  message: Text("Learn it firsthand: \(guide.title)"),
+                  preview: SharePreview("Learn it firsthand: \(guide.title)")) {
           Image(systemName: "square.and.arrow.up").font(.system(size: 17, weight: .semibold)).frame(width: 44, height: 44)
         }
         .glassEffect(.regular.interactive(), in: .circle)

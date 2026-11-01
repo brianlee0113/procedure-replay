@@ -195,6 +195,33 @@ extension View {
 extension EnvironmentValues {
   /// Back for a screen under `edgeSwipeBack()`: slides it out to the right, then dismisses it. Nil elsewhere.
   @Entry var slideBack: (() -> Void)?
+  /// Opens a guide author's profile; your own name opens Library instead. Set by `authorProfiles()`.
+  @Entry var openAuthor: (String) -> Void = { _ in }
+  /// Closes whatever is on top and shows the Library tab, which is your own profile. Set by RootView.
+  @Entry var showLibrary: () -> Void = {}
+}
+
+/// Lets author names below this view open profiles: someone else's slides in over this screen (Back or an edge
+/// swipe closes it), your own switches to Library.
+private struct AuthorProfiles: ViewModifier {
+  @State private var profile: ProfileLink?
+  @Environment(\.showLibrary) private var showLibrary
+
+  func body(content: Content) -> some View {
+    content
+      .environment(\.openAuthor) { id in
+        if id == API.user { showLibrary() } else { withoutAnimation { profile = ProfileLink(id: id) } }
+      }
+      .fullScreenCover(item: $profile) { link in ProfileView(userId: link.id).edgeSwipeBack() }
+  }
+}
+
+private struct ProfileLink: Identifiable {
+  let id: String
+}
+
+extension View {
+  func authorProfiles() -> some View { modifier(AuthorProfiles()) }
 }
 
 /// Presents or dismisses a full-screen cover without its slide-up/down, for covers that slide sideways themselves.

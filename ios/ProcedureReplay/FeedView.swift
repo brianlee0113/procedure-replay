@@ -67,6 +67,7 @@ struct FeedView: View {
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }  // likes may have changed
     }
+    .authorProfiles()
   }
 
   private func load() async {
@@ -84,6 +85,7 @@ struct FeedView: View {
 struct FeedCard: View {
   @Binding var card: GuideCard
   let open: () -> Void
+  @Environment(\.openAuthor) private var openAuthor
 
   var body: some View {
     ZStack {
@@ -106,9 +108,16 @@ struct FeedCard: View {
         Spacer()
         Text(card.title).font(.title2.bold()).multilineTextAlignment(.leading)
         HStack(spacing: 8) {
-          Avatar(name: card.authorName, size: 28)
-          Text([card.authorName, card.authorRole].filter { !$0.isEmpty }.joined(separator: " · "))
-            .font(.caption).lineLimit(1)
+          Button { openAuthor(card.author) } label: {
+            HStack(spacing: 8) {
+              Avatar(name: card.authorName, size: 28)
+              Text([card.authorName, card.authorRole].filter { !$0.isEmpty }.joined(separator: " · "))
+                .font(.caption).lineLimit(1)
+            }
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+          .accessibilityLabel("\(card.authorName)'s profile")
           Spacer()
           ReactionButton(symbol: card.liked ? "heart.fill" : "heart", count: card.likes,
                          tint: card.liked ? Color.live : .white, label: card.liked ? "Unlike" : "Like") {

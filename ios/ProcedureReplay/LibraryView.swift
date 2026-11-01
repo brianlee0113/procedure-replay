@@ -4,13 +4,17 @@ import SwiftUI
 
 struct LibraryView: View {
   let reload: Int
+  /// Bumped when your own name is tapped somewhere: close the guide open on top so Library shows.
+  var home = 0
   /// Opens a draft in the Draft editor, so the instructor can keep editing and publish it.
   var openDraft: (String) -> Void = { _ in }
 
   @State private var library: Library?
   @State private var error: String?
   @State private var opened: OpenedGuide?
-  @State private var tab: Shelf = .mine
+  /// The shelf in view; the grids page sideways, so a swipe or a tab tap moves it.
+  @State private var page: Shelf? = .mine
+  private var tab: Shelf { page ?? .mine }
 
   enum Shelf: String, CaseIterable {
     case mine = "My guides", saved = "Saved", liked = "Liked"
@@ -42,7 +46,7 @@ struct LibraryView: View {
             .scrollTargetBehavior(.viewAligned)
             .scrollIndicators(.hidden)
             tabs(library)
-            grid(cards(library), empty: emptyMessage)
+            shelves(library)
           }
         }
         .padding(.horizontal, 16)
@@ -57,19 +61,38 @@ struct LibraryView: View {
         NavigationStack { GuideView(model: GuideModel(guideId: o.card.guideId), playing: o.step) }.edgeSwipeBack()
       }
       .onChange(of: opened) { if opened == nil { Task { await load() } } }
+      .onChange(of: home) { withoutAnimation { opened = nil } }
     }
   }
 
-  private func cards(_ library: Library) -> [GuideCard] {
-    switch tab {
+  /// My guides, Saved and Liked side by side; swipe left or right to move between them.
+  private func shelves(_ library: Library) -> some View {
+    ScrollView(.horizontal) {
+      HStack(alignment: .top, spacing: 0) {
+        ForEach(Shelf.allCases, id: \.self) { shelf in
+          grid(cards(shelf, library), shelf: shelf)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .containerRelativeFrame(.horizontal)
+            .id(shelf)
+        }
+      }
+      .scrollTargetLayout()
+    }
+    .scrollTargetBehavior(.paging)
+    .scrollPosition(id: $page)
+    .scrollIndicators(.hidden)
+  }
+
+  private func cards(_ shelf: Shelf, _ library: Library) -> [GuideCard] {
+    switch shelf {
     case .mine: library.mine
     case .saved: library.saved
     case .liked: library.liked
     }
   }
 
-  private var emptyMessage: String {
-    switch tab {
+  private func emptyMessage(_ shelf: Shelf) -> String {
+    switch shelf {
     case .mine: "Guides you record appear here."
     case .saved: "Tap the bookmark on a guide to keep it here."
     case .liked: "Guides you like appear here."
@@ -80,7 +103,7 @@ struct LibraryView: View {
     HStack(spacing: 0) {
       ForEach(Shelf.allCases, id: \.self) { shelf in
         let on = shelf == tab
-        Button { tab = shelf } label: {
+        Button { withAnimation(.snappy) { page = shelf } } label: {
           VStack(spacing: 8) {
             Text("\(shelf.rawValue) \(count(shelf, library))")
               .font(.subheadline.weight(on ? .semibold : .medium))
@@ -106,19 +129,12 @@ struct LibraryView: View {
   }
 
   @ViewBuilder
-  private func grid(_ cards: [GuideCard], empty: String) -> some View {
+  private func grid(_ cards: [GuideCard], shelf: Shelf) -> some View {
     if cards.isEmpty {
-      Text(empty).font(.callout).foregroundStyle(Color.inkSecondary).padding(.top, 8)
+      Text(emptyMessage(shelf)).font(.callout).foregroundStyle(Color.inkSecondary).padding(.top, 8)
     } else {
-      LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-        ForEach(cards) { card in
-          Button {
-            if card.visibility == "draft" { openDraft(card.guideId) } else { withoutAnimation { opened = OpenedGuide(card: card, step: nil) } }
-          } label: {
-            CoverTile(card: card, showsStatus: tab == .mine)
-          }
-          .buttonStyle(.plain)
-        }
+      CoverGrid(cards: cards, showsStatus: shelf == .mine) { card in
+        if card.visibility == "draft" { openDraft(card.guideId) } else { withoutAnimation { opened = OpenedGuide(card: card, step: nil) } }
       }
     }
   }
@@ -167,9 +183,10 @@ struct ContinueCard: View {
   }
 }
 
-/// Your name and what your guides have reached, as on a profile.
+/// A name and what that person's guides have reached: yours on Library, someone else's on their profile.
 struct ProfileHeader: View {
   let name: String
+  var role = ""
   let profile: Library.Profile
 
   var body: some View {
@@ -179,7 +196,10 @@ struct ProfileHeader: View {
         .frame(width: 64, height: 64)
         .background(Color.ai, in: .circle)
       VStack(alignment: .leading, spacing: 6) {
-        Text(name).font(.headline).foregroundStyle(Color.ink)
+        VStack(alignment: .leading, spacing: 1) {
+          Text(name).font(.headline).foregroundStyle(Color.ink)
+          if !role.isEmpty { Text(role).font(.caption).foregroundStyle(Color.inkSecondary) }
+        }
         HStack(spacing: 18) {
           stat(profile.guides, "guides")
           stat(profile.learners, "learners")
@@ -196,6 +216,22 @@ struct ProfileHeader: View {
       Text(label).font(.caption).foregroundStyle(Color.inkSecondary)
     }
     .accessibilityElement(children: .combine)
+  }
+}
+
+/// Guide covers three to a row, as on a profile.
+struct CoverGrid: View {
+  let cards: [GuideCard]
+  let showsStatus: Bool
+  let open: (GuideCard) -> Void
+
+  var body: some View {
+    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+      ForEach(cards) { card in
+        Button { open(card) } label: { CoverTile(card: card, showsStatus: showsStatus) }
+          .buttonStyle(.plain)
+      }
+    }
   }
 }
 

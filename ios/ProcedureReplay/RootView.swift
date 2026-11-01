@@ -10,6 +10,8 @@ struct RootView: View {
   @State private var flow: CreateFlow?
   @State private var openGuide: GuideLink?
   @State private var reload = 0
+  /// Bumped when your own name is tapped, so Library closes what it has open on top.
+  @State private var home = 0
   @State private var banner: String?
 
   var body: some View {
@@ -18,7 +20,7 @@ struct RootView: View {
         switch tab {
         case .feed: FeedView(reload: reload) { flow = CreateFlow() }
         case .library:
-          LibraryView(reload: reload) { id in
+          LibraryView(reload: reload, home: home) { id in
             Task { flow = await CreateFlow.resuming(guideId: id) }
           }
         }
@@ -29,6 +31,15 @@ struct RootView: View {
       if let banner { Banner(text: banner).padding(.top, 8) }
     }
     .sensoryFeedback(.success, trigger: banner) { _, new in new != nil }
+    // Your own name, tapped on a card, a guide or a profile, opens Library: your profile. Leaving the Feed tab
+    // also closes whatever the Feed had open on top.
+    .environment(\.showLibrary) {
+      withoutAnimation {
+        openGuide = nil
+        tab = .library
+      }
+      home += 1
+    }
     .background(Color.canvas)
     .fullScreenCover(item: Binding(get: { flow.map(FlowBox.init) }, set: { flow = $0?.flow })) { box in
       CreateFlowView(flow: box.flow) { published in

@@ -30,6 +30,8 @@ the id, public guides also appear in the feed.
     PUT    /guides/{id}/progress             {"step": n}: where I stopped
     GET    /feed?category=                   public guides, newest first
     GET    /library                          continue (in progress), saved, mine
+    GET    /users/{id}                       someone's profile: their public guides and what those reached
+                                             (their saved and liked guides stay private)
 
 A recording goes through the same license gate as dataset videos: it gets a row in data/manifest_app.csv
 (not in git) that either inherits the license of the video fed to the mock glasses (source_video_id) or
@@ -582,6 +584,11 @@ def feed(category: guides.Category | None = None, user: str = USER) -> list[dict
     return sorted(cards, key=lambda c: c["published_at"] or "", reverse=True)
 
 
+def learners_of(guide_id: str, author: str, all_progress: dict) -> set[str]:
+    """Anyone other than the author who has opened a step of the guide."""
+    return {u for u, seen in all_progress.items() if u != author and guide_id in seen}
+
+
 @app.get("/library")
 def library(user: str = USER) -> dict:
     progress = read_json(PROGRESS, {}).get(user, {})
@@ -598,8 +605,7 @@ def library(user: str = USER) -> dict:
         r = reactions.get(gid, {})
         if meta.author == user:
             out["mine"].append(c)
-            # Learners: anyone else who has opened a step of one of your guides.
-            learners |= {u for u, seen in all_progress.items() if u != user and gid in seen}
+            learners |= learners_of(gid, user, all_progress)
             likes += len(r.get("likes", []))
         if user in r.get("saves", []):
             out["saved"].append(c)
@@ -610,3 +616,27 @@ def library(user: str = USER) -> dict:
             out["continue"].append({**c, "step": progress[gid], "next_step_title": step.title})
     out["profile"] = {"guides": sum(c["visibility"] != "draft" for c in out["mine"]), "learners": len(learners), "likes": likes}
     return out
+
+
+@app.get("/users/{user_id}")
+def user_profile(user_id: str, user: str = USER) -> dict:
+    """Someone's profile as anyone sees it: public guides, newest first, and the learners and likes those reached.
+    Their drafts, private guides, saved and liked guides are not shown, nor counted."""
+    reactions = read_json(REACTIONS, {})
+    all_progress = read_json(PROGRESS, {})
+    name, role, cards, learners, likes = None, "", [], set(), 0
+    for gid in guides.all_ids():
+        guide, meta = guides.load(gid)
+        if meta.author != user_id or meta.visibility == "draft":
+            continue
+        name, role = name or meta.author_name, role or meta.author_role
+        if meta.visibility != "public":
+            continue
+        cards.append(card(guide, meta, user))
+        learners |= learners_of(gid, user_id, all_progress)
+        likes += len(reactions.get(gid, {}).get("likes", []))
+    if name is None:
+        raise HTTPException(404, "no such user")
+    cards.sort(key=lambda c: c["published_at"] or "", reverse=True)
+    return {"user": user_id, "name": name, "role": role,
+            "profile": {"guides": len(cards), "learners": len(learners), "likes": likes}, "guides": cards}

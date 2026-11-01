@@ -58,6 +58,7 @@ struct GuideView: View {
         StepPlayerView(guide: response.guide, startIndex: start.index).edgeSwipeBack()
       }
     }
+    .authorProfiles()
   }
 
   private func content(_ response: GuideResponse) -> some View {
@@ -157,19 +158,7 @@ struct GuideView: View {
     }
   }
 
-  private func author(_ meta: GuideMeta) -> some View {
-    HStack(spacing: 8) {
-      Text(meta.authorName.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined())
-        .font(.eyebrow).foregroundStyle(.white)
-        .frame(width: 32, height: 32)
-        .background(Color.ai, in: .circle)
-      VStack(alignment: .leading, spacing: 1) {
-        Text(meta.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink)
-        Text([meta.authorRole, "recorded on Meta glasses"].filter { !$0.isEmpty }.joined(separator: " · "))
-          .font(.caption).foregroundStyle(Color.inkSecondary)
-      }
-    }
-  }
+  private func author(_ meta: GuideMeta) -> some View { AuthorRow(meta: meta) }
 
   private func actions(_ response: GuideResponse) -> some View {
     let r = response.reactions
@@ -210,4 +199,31 @@ struct GuideView: View {
 private struct StartStep: Identifiable {
   let index: Int
   var id: Int { index }
+}
+
+/// The guide's author under its title; tapping it opens their profile. A view of its own so it reads the
+/// `openAuthor` that GuideView's `authorProfiles()` sets, not the one of the screen the guide was opened from.
+private struct AuthorRow: View {
+  let meta: GuideMeta
+  @Environment(\.openAuthor) private var openAuthor
+
+  var body: some View {
+    Button { openAuthor(meta.author) } label: {
+      HStack(spacing: 8) {
+        Text(meta.authorName.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined())
+          .font(.eyebrow).foregroundStyle(.white)
+          .frame(width: 32, height: 32)
+          .background(Color.ai, in: .circle)
+        VStack(alignment: .leading, spacing: 1) {
+          Text(meta.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(Color.ink)
+          Text([meta.authorRole, "recorded on Meta glasses"].filter { !$0.isEmpty }.joined(separator: " · "))
+            .font(.caption).foregroundStyle(Color.inkSecondary)
+        }
+        Spacer(minLength: 0)
+      }
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .accessibilityLabel("\(meta.authorName)'s profile")
+  }
 }

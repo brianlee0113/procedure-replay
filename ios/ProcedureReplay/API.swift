@@ -112,6 +112,9 @@ enum API {
 
   static func library() async throws -> Library { try await send(request("library")) }
 
+  /// Someone's profile: their public guides only (src/pr/server.py user_profile).
+  static func user(_ id: String) async throws -> UserProfile { try await send(request("users/\(id)")) }
+
   /// Category ids in taxonomy order (docs/B0_guide_eval_plan.md §4.3) with the server's labels.
   static func categories() async throws -> [(id: String, label: String)] {
     let labels: [String: String] = try await send(request("categories"))
@@ -280,6 +283,15 @@ struct Library: Decodable {
     let learners: Int
     let likes: Int
   }
+}
+
+/// Someone else's profile as GET /users/{id} returns it. Their saved and liked guides are never sent.
+struct UserProfile: Decodable {
+  let user: String
+  let name: String
+  let role: String
+  let profile: Library.Profile
+  let guides: [GuideCard]
 }
 
 struct PublishRequest: Encodable {

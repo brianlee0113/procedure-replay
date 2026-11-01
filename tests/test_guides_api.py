@@ -86,6 +86,16 @@ assert [x["guide_id"] for x in lib["mine"]] == [gid]
 assert lib["profile"] == {"guides": 1, "learners": 1, "likes": 1}  # min liked it and opened step 3
 assert api.delete(f"/guides/{gid}/like", headers=MIN).json()["likes"] == 0
 
+# A profile shows someone's public guides only; their saved and liked guides stay private.
+u = api.get("/users/luis", headers=MIN).json()
+assert set(u) == {"user", "name", "role", "profile", "guides"}, u  # no saved / liked
+assert u["name"] == "Luis Ortega" and [x["guide_id"] for x in u["guides"]] == [gid]
+assert u["profile"] == {"guides": 1, "learners": 1, "likes": 0}
+assert api.get("/users/min", headers=LUIS).status_code == 404  # min has published no guides
+api.post(f"/guides/{gid}/publish", json={"visibility": "private"}, headers=LUIS)
+u = api.get("/users/luis", headers=MIN).json()
+assert u["guides"] == [] and u["profile"] == {"guides": 0, "learners": 0, "likes": 0}
+
 # Clip and covers come from the source footage.
 if guides.source_path(guides.load(gid)[0]).exists():
     r = api.get(f"/guides/{gid}/clips/2.mp4", headers=MIN)
